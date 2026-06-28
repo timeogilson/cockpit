@@ -48,6 +48,28 @@ export function modelLabel(model: string): string {
   return model.replace(/^claude-/, '').replace(/-(\d{8})$/, '');
 }
 
+/** Fraction (0..1) → "42%". */
+export function formatPct(frac: number): string {
+  if (!Number.isFinite(frac)) return '0%';
+  return `${Math.round(frac * 100)}%`;
+}
+
+/** Compact "$/hr" rate label. */
+export function formatRate(usdPerHour: number): string {
+  return `${formatCost(usdPerHour)}/hr`;
+}
+
+/** Short local date, e.g. "Jun 28". */
+export function shortDate(epochMs: number): string {
+  if (!epochMs) return '—';
+  return new Date(epochMs).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+/** Local hour label for a 0–23 hour, e.g. "14h". */
+export function hourLabel(hour: number): string {
+  return `${String(hour).padStart(2, '0')}h`;
+}
+
 export const STATUS_META: Record<
   AgentStatus,
   { label: string; dot: string; text: string; ring: string }
