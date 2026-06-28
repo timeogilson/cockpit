@@ -1,9 +1,14 @@
 import type { Agent } from '@shared/types';
 import { elapsed, formatCost, formatTokens, modelLabel, relativeTime, STATUS_META, sumTokens } from '../lib/format';
+import { useControlStore } from '../store/useControlStore';
 
 export default function AgentCard({ agent, now }: { agent: Agent; now: number }): JSX.Element {
   const meta = STATUS_META[agent.status];
   const tokens = sumTokens(agent.tokens);
+  // M4: control actions (additive — wired through the separate control store).
+  const stop = useControlStore((s) => s.stop);
+  const openFollowUp = useControlStore((s) => s.openFollowUp);
+  const canStop = agent.status === 'busy' || agent.status === 'idle' || agent.status === 'needs-input';
 
   return (
     <article
@@ -48,6 +53,29 @@ export default function AgentCard({ agent, now }: { agent: Agent; now: number })
           {formatCost(agent.costUsd)}
           <span className="ml-1 text-ink-600">{formatTokens(tokens)}</span>
         </span>
+      </div>
+
+      {/* M4: per-agent control actions (revealed on hover). */}
+      <div className="mt-2 flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <button
+          onClick={() => openFollowUp(agent.sessionId, agent.title)}
+          className="rounded border border-ink-700 px-2 py-0.5 text-[10.5px] text-ink-100/70 hover:border-ink-600 hover:text-ink-100/90"
+          title="Resume this session with a follow-up message"
+        >
+          Follow up
+        </button>
+        {canStop && (
+          <button
+            onClick={() =>
+              stop({ pid: agent.pid, sessionId: agent.sessionId }, agent.title)
+            }
+            disabled={!agent.pid}
+            className="rounded border border-ink-700 px-2 py-0.5 text-[10.5px] text-ink-100/70 hover:border-status-failed/60 hover:text-status-failed disabled:cursor-not-allowed disabled:opacity-40"
+            title={agent.pid ? 'Tree-kill this agent process' : 'No live pid to stop'}
+          >
+            Stop
+          </button>
+        )}
       </div>
     </article>
   );

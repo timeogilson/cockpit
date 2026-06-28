@@ -4,6 +4,10 @@ import TopNav from './components/TopNav';
 import AgentsBoard from './components/AgentsBoard';
 import UsageRail from './components/UsageRail';
 import Placeholder from './components/Placeholder';
+import LaunchDialog from './components/LaunchDialog';
+import FollowUpDialog from './components/FollowUpDialog';
+import NotificationsSettings from './components/NotificationsSettings';
+import Toasts from './components/Toasts';
 
 export default function App(): JSX.Element {
   const tab = useStore((s) => s.tab);
@@ -22,6 +26,12 @@ export default function App(): JSX.Element {
         </main>
         <UsageRail />
       </div>
+
+      {/* M4/M6: control + notification overlays (additive). */}
+      <LaunchDialog />
+      <FollowUpDialog />
+      <NotificationsSettings />
+      <Toasts />
     </div>
   );
 }
