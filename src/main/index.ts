@@ -4,6 +4,8 @@ import { app, BrowserWindow, shell } from 'electron';
 import { DataEngine } from './engine';
 import { registerIpc } from './ipc';
 import { createTray, destroyTray } from './tray';
+import { initNotifications } from './notifications';
+import { getController } from './controller';
 
 let mainWindow: BrowserWindow | null = null;
 let engine: DataEngine | null = null;
@@ -57,6 +59,8 @@ app.whenReady().then(async () => {
     console.error('[main] engine failed to start (UI still loads):', (err as Error).message);
   }
 
+  // M6: load notification prefs + window getter before the first snapshot push.
+  initNotifications(getWindow);
   registerIpc(engine, getWindow);
   createWindow();
   createTray(getWindow);
@@ -88,6 +92,8 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   engine?.stop();
+  // M4: best-effort kill of any foreground agents Cockpit launched.
+  getController().stopAll();
   destroyTray();
 });
 
