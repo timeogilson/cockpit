@@ -1,13 +1,30 @@
 import type { Agent } from '@shared/types';
 import { elapsed, formatCost, formatTokens, modelLabel, relativeTime, STATUS_META, sumTokens } from '../lib/format';
+// M3 (additive): clicking a card opens the detail drawer.
+import { useStore } from '../store/useStore';
 
 export default function AgentCard({ agent, now }: { agent: Agent; now: number }): JSX.Element {
   const meta = STATUS_META[agent.status];
   const tokens = sumTokens(agent.tokens);
+  // M3 (additive): open the transcript drawer for this session.
+  const openAgent = useStore((s) => s.openAgent);
+  const selected = useStore((s) => s.selectedSessionId === agent.sessionId);
 
   return (
     <article
-      className="group rounded-lg border border-ink-700/70 bg-ink-850 p-3 shadow-card transition-colors hover:border-ink-600"
+      onClick={() => void openAgent(agent.sessionId)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          void openAgent(agent.sessionId);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open transcript: ${agent.title}`}
+      className={`group cursor-pointer rounded-lg border bg-ink-850 p-3 shadow-card outline-none transition-colors hover:border-ink-600 focus-visible:ring-2 focus-visible:ring-accent/40 ${
+        selected ? 'border-accent/60 ring-1 ring-accent/30' : 'border-ink-700/70'
+      }`}
     >
       <div className="flex items-start gap-2">
         <span
