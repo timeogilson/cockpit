@@ -1,7 +1,17 @@
 import { app, ipcMain, type BrowserWindow } from 'electron';
 import type { AppInfo } from '@shared/types';
+import type {
+  DispatchRequest,
+  FollowUpRequest,
+  LaunchRequest,
+  SaveTemplateRequest,
+  StopRequest,
+  NotifyConfig
+} from '@shared/control';
 import { DataEngine, type EngineSnapshot, claudeDir, getTranscriptDetail } from './engine';
 import { setTrayStatus } from './tray';
+import { getController } from './controller';
+import { getNotifyConfig, onSnapshot as notifyOnSnapshot, setNotifyConfig } from './notifications';
 
 /**
  * Wire the DataEngine to typed IPC:
@@ -20,6 +30,8 @@ export function registerIpc(engine: DataEngine, getWindow: () => BrowserWindow |
     }
     const busy = snap.agents.agents.filter((a) => a.status === 'busy').length;
     setTrayStatus(busy);
+    // M6: diff this snapshot for status-transition + budget notifications.
+    notifyOnSnapshot(snap);
   };
 
   engine.on('snapshot', push);
@@ -50,4 +62,22 @@ export function registerIpc(engine: DataEngine, getWindow: () => BrowserWindow |
       return getTranscriptDetail(''); // returns a safe notFound detail
     }
   });
+
+  // ---- M4: Controller commands ---------------------------------------------
+  const controller = getController();
+
+  ipcMain.handle('control:launch', (_e, req: LaunchRequest) => controller.launch(req));
+  ipcMain.handle('control:stop', (_e, req: StopRequest) => controller.stop(req));
+  ipcMain.handle('control:followup', (_e, req: FollowUpRequest) => controller.followUp(req));
+  ipcMain.handle('control:dispatch', (_e, req: DispatchRequest) => controller.dispatchMany(req));
+  ipcMain.handle('control:templates:list', () => controller.listTemplates());
+  ipcMain.handle('control:templates:save', (_e, req: SaveTemplateRequest) =>
+    controller.saveTemplate(req)
+  );
+
+  // ---- M6: Notification settings -------------------------------------------
+  ipcMain.handle('notify:getConfig', () => getNotifyConfig());
+  ipcMain.handle('notify:setConfig', (_e, partial: Partial<NotifyConfig>) =>
+    setNotifyConfig(partial)
+  );
 }

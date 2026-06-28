@@ -1,4 +1,5 @@
 import { useStore, type Tab } from '../store/useStore';
+import { useControlStore } from '../store/useControlStore';
 
 const TABS: Tab[] = ['Agents', 'Sessions', 'Projects', 'Usage', 'Config'];
 
@@ -7,6 +8,8 @@ export default function TopNav(): JSX.Element {
   const setTab = useStore((s) => s.setTab);
   const agents = useStore((s) => s.agents);
   const connected = useStore((s) => s.connected);
+  const openLaunch = useControlStore((s) => s.openLaunch);
+  const openSettings = useControlStore((s) => s.openSettings);
 
   const busy = agents?.agents.filter((a) => a.status === 'busy').length ?? 0;
 
@@ -46,6 +49,20 @@ export default function TopNav(): JSX.Element {
       </nav>
 
       <div className="ml-auto flex items-center gap-3 text-xs text-ink-500">
+        <button
+          onClick={openLaunch}
+          className="rounded-md bg-accent px-2.5 py-1 text-[12px] font-medium text-white transition-colors hover:bg-accent-soft"
+          title="Launch a new agent"
+        >
+          + Launch
+        </button>
+        <button
+          onClick={openSettings}
+          className="grid h-7 w-7 place-items-center rounded-md text-ink-500 transition-colors hover:bg-ink-850 hover:text-ink-100/80"
+          title="Notification settings"
+        >
+          ⚙
+        </button>
         <span className="flex items-center gap-1.5">
           <span className={`h-1.5 w-1.5 rounded-full ${busy > 0 ? 'bg-status-busy pulse-dot' : 'bg-ink-600'}`} />
           {busy} running
