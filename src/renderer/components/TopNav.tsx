@@ -22,7 +22,7 @@ export default function TopNav(): JSX.Element {
       <nav className="flex items-center gap-1">
         {TABS.map((t) => {
           const active = t === tab;
-          const enabled = t === 'Agents';
+          const enabled = t === 'Agents' || t === 'Usage';
           return (
             <button
               key={t}
