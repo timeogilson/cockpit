@@ -1,6 +1,6 @@
 import { app, ipcMain, type BrowserWindow } from 'electron';
 import type { AppInfo } from '@shared/types';
-import { DataEngine, type EngineSnapshot, claudeDir } from './engine';
+import { DataEngine, type EngineSnapshot, claudeDir, getTranscriptDetail } from './engine';
 import { setTrayStatus } from './tray';
 
 /**
@@ -37,5 +37,17 @@ export function registerIpc(engine: DataEngine, getWindow: () => BrowserWindow |
       chrome: process.versions.chrome ?? 'unknown',
       claudeDir: claudeDir()
     };
+  });
+
+  // M3 (additive): on-demand fetch of one session's full transcript detail.
+  // Fail-soft — a thrown/parse error yields a notFound-style empty detail.
+  ipcMain.handle('transcript:get', (_event, payload: { sessionId: string }) => {
+    const sessionId = payload?.sessionId ?? '';
+    try {
+      return getTranscriptDetail(sessionId);
+    } catch (err) {
+      console.error('[ipc] transcript:get failed (fail-soft):', (err as Error).message);
+      return getTranscriptDetail(''); // returns a safe notFound detail
+    }
   });
 }
