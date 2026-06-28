@@ -5,6 +5,8 @@ import AgentsBoard from './components/AgentsBoard';
 import UsageRail from './components/UsageRail';
 import UsageView from './components/UsageView';
 import Placeholder from './components/Placeholder';
+// M3 (additive): transcript detail drawer (self-manages visibility from the store).
+import DetailDrawer from './components/DetailDrawer';
 
 export default function App(): JSX.Element {
   const tab = useStore((s) => s.tab);
@@ -29,6 +31,7 @@ export default function App(): JSX.Element {
         </main>
         <UsageRail />
       </div>
+      <DetailDrawer />
     </div>
   );
 }

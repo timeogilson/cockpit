@@ -3,6 +3,8 @@
 // handlers + push), preload (to build the bridge), and renderer (to consume).
 
 import type { AgentsSnapshot, Usage, AppInfo } from './types';
+// M3 (additive): transcript-detail payload for the detail drawer.
+import type { TranscriptDetail } from './transcript';
 
 /** Channels the main process PUSHES to the renderer (streams). */
 export interface PushChannels {
@@ -22,6 +24,11 @@ export interface InvokeCommands {
   'app:info': {
     params: void;
     result: AppInfo;
+  };
+  // M3 (additive): fetch one session's full, ordered transcript on demand.
+  'transcript:get': {
+    params: { sessionId: string };
+    result: TranscriptDetail;
   };
 }
 export type InvokeCommand = keyof InvokeCommands;
