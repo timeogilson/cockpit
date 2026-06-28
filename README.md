@@ -39,6 +39,14 @@ spend is going today.
   activity line, token/cost) and tasteful empty states.
 - **Usage rail** — today's spend, token totals (in/out/cache), and a per-model
   breakdown.
+- **Session workspace** (default tab) — a "Claude Code with extras" shell: a
+  sessions sidebar (live "Running here" + read-only "Observed" external
+  sessions), a center pane, and the Usage rail. Starting a session spawns a real
+  **embedded `claude` terminal** — a node-pty pseudo-terminal in the main process
+  rendered with **xterm.js** — so you drive `claude` interactively inside Cockpit.
+  Main resolves the **absolute** `claude` path (Windows ConPTY needs it; override
+  with `COCKPIT_CLAUDE_BIN`) and builds the interactive argv from the chosen model
+  + optional initial prompt.
 
 Not yet built (later slices): charts & rolling windows (M2), transcript viewer &
 search (M3), launch/stop/follow-up control (M4), subagent tree & projects (M5),
@@ -79,6 +87,14 @@ npm run typecheck   # tsc --noEmit across the node + web tsconfigs
 
 > Packaging (electron-builder) is configured in `electron-builder.yml` but **not**
 > wired to a script yet — no installer is produced in this slice.
+
+### Environment knobs
+
+- `COCKPIT_PTY_SMOKE=1` — run the **headless PTY smoke** (the session-shell
+  keystone proof): spawns a real pseudo-terminal, round-trips a sentinel through
+  node-pty, prints pass/fail, and exits **before** any window/engine/tray init.
+- `COCKPIT_CLAUDE_BIN=<path>` — override the resolved `claude` executable used by
+  the embedded terminal (and the controller) when auto-resolution can't find it.
 
 ---
 

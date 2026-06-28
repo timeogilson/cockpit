@@ -235,3 +235,40 @@ worktrees.
 memory/CLAUDE.md editor.
 **Polish (G):** tray w/ live status · native notifications · dark theme · mini-widget ·
 auto-start + hotkey · multi-machine later · Codex adapter later.
+
+---
+
+## Shell direction (revised 2026-06-28)
+
+The original "dashboard-first" framing (main = Agents board) is pivoted into a
+**"Claude Code with extras" shell**: the app opens on a **Session workspace**, and
+the former dashboard surfaces become **top tabs**.
+
+- **Top tabs** — `Session · Agents · Usage` are live; `Projects · Config` are
+  present but disabled ("soon", non-clickable). `Session` is the default tab.
+- **Session workspace (3 columns)**:
+  1. **Sessions sidebar** (left) — a "+ New session" launcher plus two groups:
+     **Running here** (live PTYs Cockpit spawned, selectable + stoppable) and
+     **Observed** (external sessions from the read-only engine snapshot).
+  2. **Center** — either the selected live **terminal** or, for an observed
+     session, a **read-only transcript**.
+  3. **Usage rail** (right) — the existing global rail, unchanged, as the 3rd
+     column.
+- **Embedded `claude` terminal** — a real pseudo-terminal spawned in main via
+  **node-pty** (the M0–M6 keystone) and rendered with **xterm.js** in the
+  renderer. The renderer sends a `shell:'claude'` sentinel to `pty:create`; main
+  resolves the **absolute** path to the `claude` executable (`COCKPIT_CLAUDE_BIN`
+  override → `where`/`which` → common npm-global/install probes) and builds the
+  **interactive** argv (`--model`, `-- <prompt>`; never `--print`). The
+  absolute-path resolution is mandatory on Windows because **ConPTY does not
+  PATH-resolve a bare command name**, and the renderer cannot read PATH.
+- **In-app vs observed** — sessions started inside Cockpit ("Running here") are
+  live PTYs we own (keystrokes in, streamed output out, stop/kill). Sessions
+  started **outside** Cockpit are observed read-only via their transcript on
+  disk; we never attach a terminal to them.
+- **Terminal lifetime** — every "Running here" terminal stays mounted while the
+  Session tab is open; switching sessions only CSS-hides the others. The PTY
+  itself lives in main, so even when the user leaves the Session tab (unmounting
+  xterm) the process keeps running and its output keeps accumulating in a
+  module-level ring buffer in the renderer store — `subscribeToPty` replays that
+  buffer on return, so no early output is lost.
