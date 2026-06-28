@@ -18,6 +18,7 @@ import { projectsDir, rosterPath, sessionsDir } from './paths';
 import { isPidAlive, readRoster, type Roster } from './roster';
 import { createAggregate, foldLine, type SessionAggregate } from './transcript';
 import { deriveStatus } from './liveness';
+import { UsageRoller } from './usage';
 
 /** How many recent sessions (by mtime) to read for the M1 slice. */
 const RECENT_SESSION_LIMIT = 40;
@@ -45,6 +46,8 @@ export class DataEngine extends EventEmitter {
   private roster: Roster = { supervisorPid: 0, updatedAt: 0, workers: [] };
   private aggregates = new Map<string, SessionAggregate>(); // key: filePath
   private tails = new Map<string, TailState>(); // key: filePath
+  /** M2: per-message usage over the last ~30d (own tails, fail-soft). */
+  private roller = new UsageRoller();
   private watcher?: FSWatcher;
   private pollTimer?: NodeJS.Timeout;
   private debounceTimer?: NodeJS.Timeout;
@@ -57,9 +60,11 @@ export class DataEngine extends EventEmitter {
     this.loadRoster();
     this.scanAndIngest();
     const snap = this.getSnapshot();
+    const u = this.roller.stats();
     console.error(
       `[engine] initial scan: ${this.roster.workers.length} roster worker(s), ` +
-        `${this.aggregates.size} session(s) parsed.`
+        `${this.aggregates.size} session(s) parsed; ` +
+        `usage roller: ${u.records} record(s) across ${u.sessions} session(s) / ${u.files} file(s) over 30d.`
     );
 
     this.setupWatcher();
@@ -130,6 +135,12 @@ export class DataEngine extends EventEmitter {
   private scanAndIngest(): void {
     for (const path of this.selectFiles()) {
       this.ingestFile(path);
+    }
+    // M2: widen usage collection to the last ~30 days (own file set + tails).
+    try {
+      this.roller.refresh();
+    } catch (err) {
+      console.error('[engine] usage roller refresh failed (fail-soft):', (err as Error).message);
     }
   }
 
@@ -269,9 +280,21 @@ export class DataEngine extends EventEmitter {
       usage: {
         today: { costUsd: todayCost, tokens: todayTokens, estimated: anyEstimated },
         byModel,
-        updatedAt: now
+        updatedAt: now,
+        // M2 (additive): richer analytics over the ~30d window.
+        analytics: this.computeUsageAnalytics(now)
       }
     };
+  }
+
+  /** Compute the M2 usage analytics, fail-soft (undefined on error). */
+  private computeUsageAnalytics(now: number): EngineSnapshot['usage']['analytics'] {
+    try {
+      return this.roller.compute(now);
+    } catch (err) {
+      console.error('[engine] usage analytics failed (fail-soft):', (err as Error).message);
+      return undefined;
+    }
   }
 
   // ---- watch / poll --------------------------------------------------------
@@ -303,6 +326,7 @@ export class DataEngine extends EventEmitter {
   private onFsEvent(path: string): void {
     if (path.endsWith('.jsonl')) {
       this.ingestFile(path);
+      this.roller.ingestFile(path); // M2: also feed the usage roller
     } else if (path.endsWith('roster.json')) {
       this.loadRoster();
     }
