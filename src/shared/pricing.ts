@@ -71,3 +71,12 @@ export function computeCost(model: string, tokens: TokenCounts): PricedCost {
     1_000_000;
   return { costUsd, estimated };
 }
+
+/**
+ * Resolve the pricing row for a model (additive helper, M2). Lets the
+ * UsageRoller compute cache-savings (fresh-input rate − cache-read rate)
+ * without duplicating the matching logic.
+ */
+export function getModelRate(model: string): { rate: ModelRate; estimated: boolean } {
+  return rateFor(model);
+}
