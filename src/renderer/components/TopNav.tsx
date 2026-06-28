@@ -1,7 +1,7 @@
 import { useStore, type Tab } from '../store/useStore';
 import { useControlStore } from '../store/useControlStore';
 
-const TABS: Tab[] = ['Agents', 'Sessions', 'Projects', 'Usage', 'Config'];
+const TABS: Tab[] = ['Session', 'Agents', 'Usage', 'Projects', 'Config'];
 
 export default function TopNav(): JSX.Element {
   const tab = useStore((s) => s.tab);
@@ -25,16 +25,20 @@ export default function TopNav(): JSX.Element {
       <nav className="flex items-center gap-1">
         {TABS.map((t) => {
           const active = t === tab;
-          const enabled = t === 'Agents' || t === 'Usage';
+          const enabled = t === 'Session' || t === 'Agents' || t === 'Usage';
           return (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              disabled={!enabled}
+              onClick={() => {
+                if (enabled) setTab(t);
+              }}
               className={[
                 'relative rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors',
                 active
                   ? 'bg-ink-750 text-white'
-                  : 'text-ink-500 hover:bg-ink-850 hover:text-ink-100/80'
+                  : 'text-ink-500 hover:bg-ink-850 hover:text-ink-100/80',
+                'disabled:cursor-not-allowed disabled:opacity-60'
               ].join(' ')}
             >
               {t}

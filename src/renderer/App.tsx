@@ -5,6 +5,7 @@ import AgentsBoard from './components/AgentsBoard';
 import UsageRail from './components/UsageRail';
 import UsageView from './components/UsageView';
 import Placeholder from './components/Placeholder';
+import SessionWorkspace from './components/session/SessionWorkspace';
 // M3 (additive): transcript detail drawer (self-manages visibility from the store).
 import DetailDrawer from './components/DetailDrawer';
 import LaunchDialog from './components/LaunchDialog';
@@ -25,7 +26,9 @@ export default function App(): JSX.Element {
       <TopNav />
       <div className="flex min-h-0 flex-1">
         <main className="min-w-0 flex-1 overflow-hidden p-4">
-          {tab === 'Agents' ? (
+          {tab === 'Session' ? (
+            <SessionWorkspace />
+          ) : tab === 'Agents' ? (
             <AgentsBoard />
           ) : tab === 'Usage' ? (
             <UsageView />

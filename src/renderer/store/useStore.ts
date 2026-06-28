@@ -2,8 +2,10 @@ import { create } from 'zustand';
 import type { AgentsSnapshot, Usage } from '@shared/types';
 // M3 (additive): transcript detail for the drawer.
 import type { TranscriptDetail } from '@shared/transcript';
+// Session-shell: wire the live-PTY subscriptions at app init.
+import { useSessionStore } from './useSessionStore';
 
-export type Tab = 'Agents' | 'Sessions' | 'Projects' | 'Usage' | 'Config';
+export type Tab = 'Session' | 'Agents' | 'Usage' | 'Projects' | 'Config';
 
 interface CockpitState {
   tab: Tab;
@@ -34,7 +36,7 @@ interface CockpitState {
 }
 
 export const useStore = create<CockpitState>((set, get) => ({
-  tab: 'Agents',
+  tab: 'Session',
   setTab: (tab) => set({ tab }),
 
   agents: null,
@@ -61,6 +63,8 @@ export const useStore = create<CockpitState>((set, get) => ({
       console.error('[renderer] initial snapshot failed:', err);
       set({ connected: false });
     }
+    // Session-shell: wire the live-PTY data/exit subscriptions (idempotent).
+    useSessionStore.getState().initSessions();
   },
 
   // M3 (additive): detail drawer.
