@@ -10,12 +10,15 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
+    "rebuild": "electron-builder install-app-deps",
+    "postinstall": "npm run rebuild || node -e \"console.warn('[postinstall] electron-builder install-app-deps skipped (no C++/Python toolchain); node-pty ships ABI-stable N-API prebuilds that load under this Electron without a rebuild — continuing')\"",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web"
   },
   "dependencies": {
     "chokidar": "^3.6.0",
+    "node-pty": "^1.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^9.1.0",

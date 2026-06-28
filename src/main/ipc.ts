@@ -8,9 +8,17 @@ import type {
   StopRequest,
   NotifyConfig
 } from '@shared/control';
+import type {
+  PtyCreateRequest,
+  PtyCreateResult,
+  PtyKillRequest,
+  PtyResizeRequest,
+  PtyWriteRequest
+} from '@shared/pty';
 import { DataEngine, type EngineSnapshot, claudeDir, getTranscriptDetail } from './engine';
 import { setTrayStatus } from './tray';
 import { getController } from './controller';
+import { getPtyManager } from './pty';
 import { getNotifyConfig, onSnapshot as notifyOnSnapshot, setNotifyConfig } from './notifications';
 
 /**
@@ -80,4 +88,41 @@ export function registerIpc(engine: DataEngine, getWindow: () => BrowserWindow |
   ipcMain.handle('notify:setConfig', (_e, partial: Partial<NotifyConfig>) =>
     setNotifyConfig(partial)
   );
+
+  // ---- Session-shell: embedded terminal (node-pty) -------------------------
+  const ptyManager = getPtyManager();
+
+  // Stream pty output/exit to the renderer. Guard destroyed windows (mirror `push`).
+  ptyManager.on('data', ({ id, chunk }) => {
+    const win = getWindow();
+    if (win && !win.isDestroyed()) win.webContents.send('pty:data', { id, chunk });
+  });
+  ptyManager.on('exit', ({ id, code }) => {
+    const win = getWindow();
+    if (win && !win.isDestroyed()) win.webContents.send('pty:exit', { id, code });
+  });
+
+  // Create — fail-soft: never throw across IPC, return { ok, id } | { ok:false, error }.
+  ipcMain.handle('pty:create', (_e, req: PtyCreateRequest): PtyCreateResult => {
+    try {
+      const id = ptyManager.create(req);
+      return { ok: true, id };
+    } catch (err) {
+      const error = (err as Error).message;
+      console.error('[ipc] pty:create failed (fail-soft):', error);
+      return { ok: false, error };
+    }
+  });
+
+  ipcMain.handle('pty:write', (_e, req: PtyWriteRequest): void => {
+    ptyManager.write(req?.id, req?.data ?? '');
+  });
+
+  ipcMain.handle('pty:resize', (_e, req: PtyResizeRequest): void => {
+    ptyManager.resize(req?.id, req?.cols, req?.rows);
+  });
+
+  ipcMain.handle('pty:kill', (_e, req: PtyKillRequest): void => {
+    ptyManager.kill(req?.id);
+  });
 }

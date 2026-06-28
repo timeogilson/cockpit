@@ -18,15 +18,33 @@ import type {
   StopResult,
   TemplatesList
 } from './control';
+// Session-shell (embedded terminal) — PTY create/write/resize/kill + streams.
+import type {
+  PtyCreateRequest,
+  PtyCreateResult,
+  PtyDataEvent,
+  PtyExitEvent,
+  PtyKillRequest,
+  PtyResizeRequest,
+  PtyWriteRequest
+} from './pty';
 
 /** Channels the main process PUSHES to the renderer (streams). */
 export interface PushChannels {
   'agents:update': AgentsSnapshot;
   'usage:update': Usage;
+  // PTY output streams — one terminal multiplexes by `id` in the payload.
+  'pty:data': PtyDataEvent;
+  'pty:exit': PtyExitEvent;
 }
 export type PushChannel = keyof PushChannels;
 
-export const PUSH_CHANNELS: readonly PushChannel[] = ['agents:update', 'usage:update'];
+export const PUSH_CHANNELS: readonly PushChannel[] = [
+  'agents:update',
+  'usage:update',
+  'pty:data',
+  'pty:exit'
+];
 
 /** Request/response commands the renderer INVOKES on the main process. */
 export interface InvokeCommands {
@@ -53,6 +71,11 @@ export interface InvokeCommands {
   // M6 — Notification settings.
   'notify:getConfig': { params: void; result: NotifyConfig };
   'notify:setConfig': { params: Partial<NotifyConfig>; result: NotifyConfig };
+  // Session-shell — embedded terminal (node-pty) lifecycle.
+  'pty:create': { params: PtyCreateRequest; result: PtyCreateResult };
+  'pty:write': { params: PtyWriteRequest; result: void };
+  'pty:resize': { params: PtyResizeRequest; result: void };
+  'pty:kill': { params: PtyKillRequest; result: void };
 }
 export type InvokeCommand = keyof InvokeCommands;
 

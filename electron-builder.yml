@@ -9,6 +9,10 @@ files:
   - out/**/*
   - resources/**/*
   - package.json
+# node-pty's native addon + ConPTY/winpty binaries can't be require()'d from
+# inside app.asar — ship them unpacked so the prebuilt .node/.dll/.exe load.
+asarUnpack:
+  - "**/node_modules/node-pty/**"
 win:
   target:
     - nsis
