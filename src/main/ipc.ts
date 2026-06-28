@@ -19,6 +19,7 @@ import { DataEngine, type EngineSnapshot, claudeDir, getTranscriptDetail } from 
 import { setTrayStatus } from './tray';
 import { getController } from './controller';
 import { getPtyManager } from './pty';
+import { resolveClaudePath, buildClaudeArgs } from './pty/claude';
 import { getNotifyConfig, onSnapshot as notifyOnSnapshot, setNotifyConfig } from './notifications';
 
 /**
@@ -105,6 +106,21 @@ export function registerIpc(engine: DataEngine, getWindow: () => BrowserWindow |
   // Create — fail-soft: never throw across IPC, return { ok, id } | { ok:false, error }.
   ipcMain.handle('pty:create', (_e, req: PtyCreateRequest): PtyCreateResult => {
     try {
+      // `shell:'claude'` is a sentinel: resolve the absolute claude path in MAIN
+      // (Windows ConPTY needs it — see ./pty/claude) and build its interactive argv.
+      if (req?.shell === 'claude') {
+        const claudePath = resolveClaudePath();
+        if (!claudePath) {
+          return { ok: false, error: 'claude executable not found on PATH' };
+        }
+        const claudeReq: PtyCreateRequest = {
+          ...req,
+          shell: claudePath,
+          args: [...buildClaudeArgs({ model: req.model, prompt: req.prompt }), ...(req.args ?? [])]
+        };
+        const id = ptyManager.create(claudeReq);
+        return { ok: true, id };
+      }
       const id = ptyManager.create(req);
       return { ok: true, id };
     } catch (err) {

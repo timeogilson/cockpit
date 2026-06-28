@@ -20,6 +20,10 @@ export interface PtyCreateRequest {
   rows: number;
   /** Extra environment, merged over `process.env`. */
   env?: Record<string, string>;
+  /** Only honored when `shell:'claude'`; main builds the claude argv from these. */
+  model?: string;
+  /** Only honored when `shell:'claude'`; main builds the claude argv from these. */
+  prompt?: string;
 }
 
 /** Main → renderer: result of a create request (fail-soft, never throws). */
