@@ -1,0 +1,20 @@
+# electron-builder packaging config — present for the future (M-late).
+# DO NOT build an installer yet; this is config only.
+appId: be.timeogilson.cockpit
+productName: Cockpit
+directories:
+  buildResources: resources
+  output: release
+files:
+  - out/**/*
+  - resources/**/*
+  - package.json
+win:
+  target:
+    - nsis
+  icon: resources/icon.png
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+publish: null

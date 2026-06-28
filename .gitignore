@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+out/
+build/
+release/
+
+# electron-builder packaging output
+dist_electron/
+*.exe
+*.AppImage
+*.dmg
+*.snap
+
+# env / secrets — never commit
+.env
+.env.*
+*.local
+
+# logs / caches
+*.log
+.tmp/
+.cache/
+.DS_Store
+Thumbs.db
+
+# generated helper (intermediate base64 used to embed the tray icon)
+resources/_tray.b64
