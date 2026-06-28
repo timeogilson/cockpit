@@ -1,0 +1,4 @@
+// Embedded 32×32 tray/app icon (a rounded blue square with a "C" glyph),
+// generated at build time and inlined so the tray never depends on a file path.
+export const TRAY_ICON_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABQklEQVR42u3XyVLCUBAFUH5LccIBkX8AFEecAeFnnXCeBUHXl2JDPdOv+3UDyYpXdXadvjcsQpJKTY/izDR/MYqxQmcbPUySKTx90UUcdOH1H8RJDJ+rdZAEvkC1jSSwBearbVh0/jBkuc4bvnD+DQ03lKPZQwucfSFEEz4sEdhFCiyefkJiCQ/tGiAFlk4+wPGFcHPSHhctcPwODgkXZrVIgczRGzhuuDRnQQscvsInevfcnBUpsFx5gU+0ADdnRQqsHDzDJ1qAm7OiBfafwPlXQJizIAVW9x7Bif4K0qwWKbC2+wCO7znAzUl7XLTAzj0klidhaNcAKZDdvkOIpURol/cfMVtuIUQVHtjBvg+sl1uwcEMt17EFclu3SIL4XpjbvEGcVG/GG6VrxMH0bZAvXmGSxvpKyhcuMYrpR63m9AENgqdsU2XT1AAAAABJRU5ErkJggg==';
