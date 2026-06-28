@@ -3,6 +3,19 @@
 // handlers + push), preload (to build the bridge), and renderer (to consume).
 
 import type { AgentsSnapshot, Usage, AppInfo } from './types';
+import type {
+  DispatchRequest,
+  DispatchResult,
+  FollowUpRequest,
+  FollowUpResult,
+  LaunchRequest,
+  LaunchResult,
+  NotifyConfig,
+  SaveTemplateRequest,
+  StopRequest,
+  StopResult,
+  TemplatesList
+} from './control';
 
 /** Channels the main process PUSHES to the renderer (streams). */
 export interface PushChannels {
@@ -23,6 +36,16 @@ export interface InvokeCommands {
     params: void;
     result: AppInfo;
   };
+  // M4 — Controller commands.
+  'control:launch': { params: LaunchRequest; result: LaunchResult };
+  'control:stop': { params: StopRequest; result: StopResult };
+  'control:followup': { params: FollowUpRequest; result: FollowUpResult };
+  'control:dispatch': { params: DispatchRequest; result: DispatchResult };
+  'control:templates:list': { params: void; result: TemplatesList };
+  'control:templates:save': { params: SaveTemplateRequest; result: TemplatesList };
+  // M6 — Notification settings.
+  'notify:getConfig': { params: void; result: NotifyConfig };
+  'notify:setConfig': { params: Partial<NotifyConfig>; result: NotifyConfig };
 }
 export type InvokeCommand = keyof InvokeCommands;
 
