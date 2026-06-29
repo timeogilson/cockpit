@@ -46,7 +46,7 @@ export default function Timeline({
           );
         })}
       </div>
-      <div className="mt-1 flex justify-between text-[10px] text-ink-600">
+      <div className="mt-1 flex justify-between font-mono text-[10px] tabular-nums text-ink-500">
         <span>{startedAt ? new Date(startedAt).toLocaleTimeString() : '—'}</span>
         <span>{startedAt && lastActivityAt ? elapsed(startedAt, lastActivityAt) : ''}</span>
         <span>{lastActivityAt ? new Date(lastActivityAt).toLocaleTimeString() : '—'}</span>

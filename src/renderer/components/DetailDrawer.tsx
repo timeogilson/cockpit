@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useNow } from '../lib/useNow';
 import { elapsed, formatCost, formatTokens, modelLabel, STATUS_META, sumTokens } from '../lib/format';
@@ -12,8 +13,8 @@ function Section({ title, right, children }: { title: string; right?: string; ch
   return (
     <section className="border-t border-ink-800 px-4 py-3.5">
       <div className="mb-2 flex items-baseline justify-between">
-        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">{title}</h3>
-        {right && <span className="text-[11px] text-ink-600">{right}</span>}
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500">{title}</h3>
+        {right && <span className="font-mono text-[11px] tabular-nums text-ink-500">{right}</span>}
       </div>
       {children}
     </section>
@@ -43,9 +44,9 @@ function CostBreakdownView({
         <div key={b.key}>
           <div className="flex items-center justify-between text-[11.5px]">
             <span className="text-ink-100/75">{b.label}</span>
-            <span className="text-ink-600">
-              <span className="font-mono">{formatTokens(tokens[b.tk])}</span> ·{' '}
-              <span className="font-mono text-ink-400">{formatCost(cost[b.key])}</span>
+            <span className="text-ink-500">
+              <span className="font-mono tabular-nums">{formatTokens(tokens[b.tk])}</span> ·{' '}
+              <span className="font-mono tabular-nums text-ink-400">{formatCost(cost[b.key])}</span>
             </span>
           </div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-ink-800">
@@ -58,7 +59,7 @@ function CostBreakdownView({
       ))}
       <div className="flex items-center justify-between border-t border-ink-800 pt-2 text-[12px]">
         <span className="font-medium text-ink-100/85">Total</span>
-        <span className="font-mono font-semibold text-ink-100/90">{formatCost(total)}</span>
+        <span className="font-mono font-semibold tabular-nums text-ink-100/90">{formatCost(total)}</span>
       </div>
     </div>
   );
@@ -109,16 +110,16 @@ export default function DetailDrawer(): JSX.Element | null {
     <div className="fixed inset-0 z-40 flex justify-end">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/45 backdrop-blur-[1px] drawer-backdrop-in"
+        className="absolute inset-0 bg-black/50 backdrop-blur-[1px] drawer-backdrop-in"
         onClick={close}
         aria-hidden
       />
 
-      {/* Panel */}
+      {/* Panel (floating layer → shadow-float) */}
       <aside
         role="dialog"
         aria-label="Agent transcript detail"
-        className="drawer-panel-in relative flex h-full w-full max-w-[620px] flex-col border-l border-ink-700 bg-ink-950 shadow-2xl"
+        className="drawer-panel-in relative flex h-full w-full max-w-[620px] flex-col border-l border-ink-700 bg-ink-900 shadow-float"
       >
         {/* Header */}
         <header className="shrink-0 border-b border-ink-800 px-4 py-3">
@@ -136,9 +137,9 @@ export default function DetailDrawer(): JSX.Element | null {
               type="button"
               onClick={close}
               aria-label="Close"
-              className="-mr-1 -mt-0.5 grid h-7 w-7 place-items-center rounded-md text-ink-500 hover:bg-ink-850 hover:text-ink-100/80"
+              className="-mr-1 -mt-0.5 grid h-7 w-7 cursor-pointer place-items-center rounded-md text-ink-500 outline-none transition-colors hover:bg-ink-800 hover:text-ink-100/80 focus-visible:ring-2 focus-visible:ring-accent-ring"
             >
-              ✕
+              <X size={16} strokeWidth={1.75} />
             </button>
           </div>
 
@@ -150,13 +151,13 @@ export default function DetailDrawer(): JSX.Element | null {
             )}
             <span className="rounded border border-ink-700 bg-ink-850 px-1.5 py-0.5 font-medium text-ink-100/70">
               {modelLabel(model)}
-              {detail?.estimated && <span className="ml-1 text-ink-600" title="estimated pricing">~</span>}
+              {detail?.estimated && <span className="ml-1 text-ink-500" title="estimated pricing">~</span>}
             </span>
             <span className="truncate text-ink-500" title={detail?.cwd}>
               {project}
               {branch && <span className="text-ink-600"> · {branch}</span>}
             </span>
-            <span className="ml-auto font-mono text-ink-500" title={`${totalTokens.toLocaleString()} tokens`}>
+            <span className="ml-auto font-mono tabular-nums text-ink-500" title={`${totalTokens.toLocaleString()} tokens`}>
               {dur} · {formatTokens(totalTokens)} tok
             </span>
           </div>

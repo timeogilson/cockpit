@@ -26,14 +26,16 @@ import {
 } from '../lib/format';
 
 // Theme-matched chart colors (Recharts can't read Tailwind tokens).
+// Warm-dark palette: clay accent + status-busy + muted warm neutrals, no neon.
 const C = {
-  grid: '#21252b',
-  axis: '#5b6573',
-  area: '#c96442',
-  busy: '#5b9dff',
-  done: '#4ec98a'
+  grid: '#382f27', // ink-700 — grid/axis lines (low opacity via opacity props)
+  axis: '#8a7d70', // ink-500 — tick text
+  area: '#d97757', // accent (clay) — primary series
+  busy: '#6a9fc4', // status-busy (calm blue) — secondary series
+  done: '#6f9e72' // status-done (muted green)
 };
-const DONUT = ['#c96442', '#5b9dff', '#4ec98a', '#f5b545', '#d98a6f', '#7c8694', '#f06a6a', '#a4abb8'];
+// Donut/bar multi-hue: accent first, then desaturated warm neutrals + muted status hues.
+const DONUT = ['#d97757', '#a99c8d', '#8a7d70', '#6a9fc4', '#6f9e72', '#c4b8a8', '#c15f3c', '#5c5046'];
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -53,7 +55,7 @@ export default function UsageView(): JSX.Element {
       <div className="grid h-full place-items-center text-center">
         <div>
           <h2 className="text-sm font-medium text-ink-100/80">No usage recorded yet</h2>
-          <p className="mt-1 max-w-xs text-xs text-ink-600">
+          <p className="mt-1 max-w-xs text-xs text-ink-500">
             Cockpit scans the last 30 days of transcripts. Spend will appear here as Claude Code
             sessions run.
           </p>
@@ -157,10 +159,10 @@ export default function UsageView(): JSX.Element {
               </ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 grid place-items-center">
                 <div className="text-center">
-                  <p className="font-mono text-sm font-semibold text-ink-100/90">
+                  <p className="font-mono text-sm font-semibold tabular-nums text-ink-100/90">
                     {formatCost(modelData.reduce((s, d) => s + d.value, 0))}
                   </p>
-                  <p className="text-[9px] uppercase tracking-wide text-ink-600">{a.windowDays}d</p>
+                  <p className="text-[9px] uppercase tracking-[0.08em] text-ink-500">{a.windowDays}d</p>
                 </div>
               </div>
             </div>
@@ -170,9 +172,9 @@ export default function UsageView(): JSX.Element {
                   <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: d.fill }} />
                   <span className="min-w-0 flex-1 truncate text-ink-100/80">
                     {d.name}
-                    {d.raw.estimated && <span className="ml-1 text-ink-600">~</span>}
+                    {d.raw.estimated && <span className="ml-1 text-ink-500" title="estimated pricing">~</span>}
                   </span>
-                  <span className="font-mono text-ink-500">{formatCost(d.value)}</span>
+                  <span className="font-mono tabular-nums text-ink-500">{formatCost(d.value)}</span>
                 </li>
               ))}
             </ul>
@@ -300,7 +302,7 @@ export default function UsageView(): JSX.Element {
         <Leaderboard rows={a.expensiveSessions} />
       </Panel>
 
-      <p className="px-1 py-3 text-[10px] text-ink-700">
+      <p className="px-1 py-3 text-[10px] text-ink-500">
         Spend is derived from token counts × an editable pricing table; unknown models are flagged
         with ~ and estimated. Set COCKPIT_5H_CAP_USD / COCKPIT_WEEKLY_CAP_USD to track caps.
       </p>
@@ -321,7 +323,7 @@ function renderTooltip(label: (point: Record<string, unknown>) => string) {
     if (!props.active || !props.payload || props.payload.length === 0) return null;
     const point = (props.payload[0]?.payload ?? {}) as Record<string, unknown>;
     return (
-      <div className="rounded-md border border-ink-700 bg-ink-900 px-2.5 py-1.5 text-[11px] text-ink-100/90 shadow-card">
+      <div className="rounded-md border border-ink-700 bg-ink-850 px-2.5 py-1.5 font-mono text-[11px] tabular-nums text-ink-100 shadow-pop">
         {label(point)}
       </div>
     );
@@ -340,10 +342,10 @@ function Panel({
   children: ReactNode;
 }): JSX.Element {
   return (
-    <section className="mt-3 rounded-lg border border-ink-700/70 bg-ink-900/60 p-3.5">
+    <section className="mt-3 rounded-lg border border-ink-700/60 bg-ink-900/60 p-3.5">
       <header className="mb-3 flex items-baseline justify-between">
         <h2 className="text-[13px] font-semibold text-ink-100/85">{title}</h2>
-        {subtitle && <span className="text-[10.5px] uppercase tracking-wide text-ink-600">{subtitle}</span>}
+        {subtitle && <span className="text-[10.5px] uppercase tracking-[0.08em] text-ink-500">{subtitle}</span>}
       </header>
       {children}
     </section>
@@ -362,12 +364,12 @@ function Kpi({
   accent?: boolean;
 }): JSX.Element {
   return (
-    <div className="rounded-lg border border-ink-700/70 bg-ink-850 px-3 py-2.5 shadow-card">
-      <p className="text-[10px] uppercase tracking-wide text-ink-600">{label}</p>
-      <p className={`mt-0.5 font-mono text-lg font-semibold ${accent ? 'text-accent-soft' : 'text-ink-100/95'}`}>
+    <div className="rounded-lg border border-ink-700/60 bg-ink-850 px-3 py-2.5">
+      <p className="text-[10px] uppercase tracking-[0.08em] text-ink-500">{label}</p>
+      <p className={`mt-0.5 font-mono text-lg font-semibold tabular-nums ${accent ? 'text-accent' : 'text-ink-100/95'}`}>
         {value}
       </p>
-      {sub && <p className="text-[10px] text-ink-600">{sub}</p>}
+      {sub && <p className="text-[10px] text-ink-500">{sub}</p>}
     </div>
   );
 }
@@ -375,8 +377,8 @@ function Kpi({
 function MiniStat({ label, value, accent }: { label: string; value: string; accent?: boolean }): JSX.Element {
   return (
     <div className="rounded-md border border-ink-800 bg-ink-850 px-2 py-1">
-      <p className="text-[9px] uppercase tracking-wide text-ink-600">{label}</p>
-      <p className={`font-mono text-[12px] ${accent ? 'text-accent-soft' : 'text-ink-100/80'}`}>{value}</p>
+      <p className="text-[9px] uppercase tracking-[0.08em] text-ink-500">{label}</p>
+      <p className={`font-mono text-[12px] tabular-nums ${accent ? 'text-accent' : 'text-ink-100/80'}`}>{value}</p>
     </div>
   );
 }
@@ -386,9 +388,9 @@ function BigStat({ label, value, hint }: { label: string; value: string; hint: s
     <div className="flex items-baseline justify-between border-b border-ink-800 pb-2 last:border-0">
       <div>
         <p className="text-[11px] text-ink-100/75">{label}</p>
-        <p className="text-[10px] text-ink-600">{hint}</p>
+        <p className="text-[10px] text-ink-500">{hint}</p>
       </div>
-      <p className="font-mono text-base font-semibold text-ink-100/90">{value}</p>
+      <p className="font-mono text-base font-semibold tabular-nums text-ink-100/90">{value}</p>
     </div>
   );
 }
@@ -403,15 +405,15 @@ function Heatmap({ cells }: { cells: UsageHeatCell[] }): JSX.Element {
     if (c.count > max) max = c.count;
   }
   const color = (n: number): string => {
-    if (n <= 0 || max <= 0) return '#16181c';
-    const t = 0.12 + 0.88 * (n / max);
-    return `rgba(91,157,255,${t.toFixed(3)})`;
+    if (n <= 0 || max <= 0) return '#221d18'; // ink-850 — empty cell
+    const t = 0.1 + 0.9 * (n / max);
+    return `rgba(217,119,87,${t.toFixed(3)})`; // accent clay intensity ramp
   };
   return (
     <div className="overflow-x-auto">
       <div className="inline-flex min-w-full flex-col gap-1">
         {/* hour header */}
-        <div className="flex items-center gap-1 pl-9 text-[8.5px] text-ink-600">
+        <div className="flex items-center gap-1 pl-9 text-[8.5px] text-ink-500">
           {Array.from({ length: 24 }, (_, h) => (
             <div key={h} className="w-3.5 text-center">
               {h % 6 === 0 ? h : ''}
@@ -420,7 +422,7 @@ function Heatmap({ cells }: { cells: UsageHeatCell[] }): JSX.Element {
         </div>
         {grid.map((row, dow) => (
           <div key={dow} className="flex items-center gap-1">
-            <div className="w-8 text-right text-[9px] text-ink-600">{DOW[dow]}</div>
+            <div className="w-8 text-right text-[9px] text-ink-500">{DOW[dow]}</div>
             {row.map((n, hour) => (
               <div
                 key={hour}
@@ -438,7 +440,7 @@ function Heatmap({ cells }: { cells: UsageHeatCell[] }): JSX.Element {
 
 function Leaderboard({ rows }: { rows: ExpensiveSession[] }): JSX.Element {
   if (rows.length === 0) {
-    return <p className="text-[12px] text-ink-600">No sessions recorded in the window.</p>;
+    return <p className="text-[12px] text-ink-500">No sessions recorded in the window.</p>;
   }
   const max = Math.max(0.0001, ...rows.map((r) => r.costUsd));
   return (
@@ -455,14 +457,14 @@ function Leaderboard({ rows }: { rows: ExpensiveSession[] }): JSX.Element {
           <div className="relative flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-[12.5px] text-ink-100/90">{r.title}</p>
-              <p className="truncate text-[10.5px] text-ink-600">
+              <p className="truncate text-[10.5px] text-ink-500">
                 {r.project} · {modelLabel(r.model)}
-                {r.estimated && <span className="ml-1 text-ink-600">~</span>} · {r.messages} msgs
+                {r.estimated && <span className="ml-1 text-ink-500" title="estimated pricing">~</span>} · {r.messages} msgs
               </p>
             </div>
             <div className="shrink-0 text-right">
-              <p className="font-mono text-[13px] text-ink-100/90">{formatCost(r.costUsd)}</p>
-              <p className="font-mono text-[10px] text-ink-600">{formatTokens(sumTokens(r.tokens))}</p>
+              <p className="font-mono text-[13px] tabular-nums text-ink-100/90">{formatCost(r.costUsd)}</p>
+              <p className="font-mono text-[10px] tabular-nums text-ink-500">{formatTokens(sumTokens(r.tokens))}</p>
             </div>
           </div>
         </li>

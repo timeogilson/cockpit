@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Bell, X } from 'lucide-react';
 import type { NotifyConfig } from '@shared/control';
 import { DEFAULT_NOTIFY_CONFIG } from '@shared/control';
 import { useControlStore } from '../store/useControlStore';
@@ -37,25 +38,28 @@ export default function NotificationsSettings(): JSX.Element | null {
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/55 p-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-6 backdrop-blur-[2px]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) close();
       }}
     >
-      <div className="w-[420px] max-w-full overflow-hidden rounded-xl border border-ink-700 bg-ink-900 shadow-card">
+      <div className="w-[420px] max-w-full overflow-hidden rounded-lg border border-ink-700 bg-ink-900 shadow-float">
         <header className="flex items-center justify-between border-b border-ink-800 px-5 py-3.5">
-          <h2 className="text-[14px] font-semibold text-ink-100/95">Notifications</h2>
+          <h2 className="flex items-center gap-2 text-[14px] font-semibold text-ink-100/95">
+            <Bell size={15} strokeWidth={1.75} className="text-ink-400" />
+            Notifications
+          </h2>
           <button
             onClick={close}
-            className="grid h-7 w-7 place-items-center rounded-md text-ink-500 hover:bg-ink-800 hover:text-ink-100/80"
-            title="Close"
+            aria-label="Close"
+            className="grid h-7 w-7 cursor-pointer place-items-center rounded-md text-ink-500 outline-none transition-colors hover:bg-ink-800 hover:text-ink-100/80 focus-visible:ring-2 focus-visible:ring-accent-ring"
           >
-            ✕
+            <X size={16} strokeWidth={1.75} />
           </button>
         </header>
 
         <div className="space-y-1 px-5 py-4">
-          {!loaded && <p className="py-4 text-center text-[12px] text-ink-600">Loading…</p>}
+          {!loaded && <p className="py-4 text-center text-[12px] text-ink-500">Loading…</p>}
           {loaded && (
             <>
               <Toggle
@@ -96,7 +100,7 @@ export default function NotificationsSettings(): JSX.Element | null {
                     value={cfg.budgetUsd}
                     disabled={!cfg.budgetEnabled}
                     onChange={(e) => patch({ budgetUsd: Math.max(0, Number(e.target.value) || 0) })}
-                    className="w-20 rounded-md border border-ink-700 bg-ink-850 px-2 py-1 text-right text-[12.5px] text-ink-100/90 outline-none focus:border-ink-500 disabled:opacity-40"
+                    className="w-20 rounded-md border border-ink-700 bg-ink-950 px-2 py-1 text-right font-mono text-[12.5px] tabular-nums text-ink-100/90 outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent-ring disabled:opacity-40"
                   />
                 </div>
               </div>
@@ -107,7 +111,7 @@ export default function NotificationsSettings(): JSX.Element | null {
         <footer className="flex justify-end border-t border-ink-800 px-5 py-3">
           <button
             onClick={close}
-            className="rounded-md bg-ink-750 px-3.5 py-1.5 text-[12.5px] font-medium text-white hover:bg-ink-700"
+            className="cursor-pointer rounded-md border border-ink-700 bg-ink-850 px-3.5 py-1.5 text-[12.5px] font-medium text-ink-100 outline-none transition-colors hover:bg-ink-800 focus-visible:ring-2 focus-visible:ring-accent-ring"
           >
             Done
           </button>
@@ -132,13 +136,13 @@ function Toggle({
     <label className="flex cursor-pointer items-start justify-between gap-3 py-2 pl-1">
       <span className="min-w-0">
         <span className="block text-[12.5px] text-ink-100/85">{label}</span>
-        <span className="block text-[11px] text-ink-600">{desc}</span>
+        <span className="block text-[11px] text-ink-500">{desc}</span>
       </span>
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-1 h-4 w-4 shrink-0 accent-status-busy"
+        className="mt-1 h-4 w-4 shrink-0 accent-accent"
       />
     </label>
   );

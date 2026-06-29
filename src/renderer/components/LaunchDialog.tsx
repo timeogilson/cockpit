@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Plus, X } from 'lucide-react';
 import {
   EFFORT_LEVELS,
   MODEL_CHOICES,
@@ -141,12 +142,12 @@ export default function LaunchDialog(): JSX.Element | null {
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/55 p-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-6 backdrop-blur-[2px]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) close();
       }}
     >
-      <div className="flex max-h-[86vh] w-[640px] max-w-full flex-col overflow-hidden rounded-xl border border-ink-700 bg-ink-900 shadow-card">
+      <div className="flex max-h-[86vh] w-[640px] max-w-full flex-col overflow-hidden rounded-lg border border-ink-700 bg-ink-900 shadow-float">
         <header className="flex items-center justify-between border-b border-ink-800 px-5 py-3.5">
           <div className="flex items-center gap-3">
             <h2 className="text-[14px] font-semibold text-ink-100/95">Launch agent</h2>
@@ -156,8 +157,8 @@ export default function LaunchDialog(): JSX.Element | null {
                   key={m}
                   onClick={() => setMode(m)}
                   className={[
-                    'rounded px-2.5 py-1 text-[11.5px] font-medium transition-colors',
-                    mode === m ? 'bg-ink-750 text-white' : 'text-ink-500 hover:text-ink-100/80'
+                    'cursor-pointer rounded px-2.5 py-1 text-[11.5px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent-ring',
+                    mode === m ? 'bg-accent-soft text-ink-50' : 'text-ink-500 hover:text-ink-100'
                   ].join(' ')}
                 >
                   {m === 'single' ? 'Single' : 'Multi-dispatch'}
@@ -167,10 +168,10 @@ export default function LaunchDialog(): JSX.Element | null {
           </div>
           <button
             onClick={close}
-            className="grid h-7 w-7 place-items-center rounded-md text-ink-500 hover:bg-ink-800 hover:text-ink-100/80"
-            title="Close"
+            aria-label="Close"
+            className="grid h-7 w-7 cursor-pointer place-items-center rounded-md text-ink-500 outline-none transition-colors hover:bg-ink-800 hover:text-ink-100/80 focus-visible:ring-2 focus-visible:ring-accent-ring"
           >
-            ✕
+            <X size={16} strokeWidth={1.75} />
           </button>
         </header>
 
@@ -258,7 +259,7 @@ export default function LaunchDialog(): JSX.Element | null {
                   type="checkbox"
                   checked={background}
                   onChange={(e) => setBackground(e.target.checked)}
-                  className="h-3.5 w-3.5 accent-status-busy"
+                  className="h-3.5 w-3.5 accent-accent"
                 />
                 Run as background agent (<code className="text-ink-500">--background</code>)
               </label>
@@ -268,7 +269,7 @@ export default function LaunchDialog(): JSX.Element | null {
                   <button
                     onClick={() => setSavingName('')}
                     disabled={!prompt.trim()}
-                    className="rounded-md border border-ink-700 px-2.5 py-1.5 text-[11.5px] text-ink-100/75 hover:border-ink-600 disabled:opacity-40"
+                    className="cursor-pointer rounded-md border border-ink-700 bg-ink-850 px-2.5 py-1.5 text-[11.5px] text-ink-100/75 outline-none transition-colors hover:border-ink-600 hover:bg-ink-800 focus-visible:ring-2 focus-visible:ring-accent-ring disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Save as template
                   </button>
@@ -284,13 +285,13 @@ export default function LaunchDialog(): JSX.Element | null {
                     <button
                       onClick={saveTemplate}
                       disabled={!savingName.trim()}
-                      className="rounded-md bg-ink-750 px-2.5 py-1.5 text-[11.5px] text-white hover:bg-ink-700 disabled:opacity-40"
+                      className="cursor-pointer rounded-md border border-ink-700 bg-ink-850 px-2.5 py-1.5 text-[11.5px] text-ink-100 outline-none transition-colors hover:bg-ink-800 focus-visible:ring-2 focus-visible:ring-accent-ring disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Save
                     </button>
                     <button
                       onClick={() => setSavingName(null)}
-                      className="rounded-md px-2 py-1.5 text-[11.5px] text-ink-500 hover:text-ink-100/80"
+                      className="cursor-pointer rounded-md px-2 py-1.5 text-[11.5px] text-ink-500 outline-none transition-colors hover:text-ink-100/80 focus-visible:ring-2 focus-visible:ring-accent-ring"
                     >
                       Cancel
                     </button>
@@ -307,13 +308,13 @@ export default function LaunchDialog(): JSX.Element | null {
               {rows.map((row, i) => (
                 <div key={i} className="rounded-lg border border-ink-800 bg-ink-850 p-2.5">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="text-[11px] uppercase tracking-wide text-ink-600">
+                    <span className="text-[11px] uppercase tracking-[0.08em] text-ink-500">
                       Task {i + 1}
                     </span>
                     {rows.length > 1 && (
                       <button
                         onClick={() => setRows((r) => r.filter((_, j) => j !== i))}
-                        className="text-[11px] text-ink-500 hover:text-status-failed"
+                        className="cursor-pointer rounded text-[11px] text-ink-500 outline-none transition-colors hover:text-status-failed focus-visible:ring-2 focus-visible:ring-accent-ring"
                       >
                         Remove
                       </button>
@@ -350,9 +351,10 @@ export default function LaunchDialog(): JSX.Element | null {
               </datalist>
               <button
                 onClick={() => setRows((r) => [...r, { cwd: '', prompt: '' }])}
-                className="rounded-md border border-dashed border-ink-700 px-2.5 py-1.5 text-[11.5px] text-ink-500 hover:border-ink-600 hover:text-ink-100/80"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-dashed border-ink-700 px-2.5 py-1.5 text-[11.5px] text-ink-500 outline-none transition-colors hover:border-ink-600 hover:text-ink-100/80 focus-visible:ring-2 focus-visible:ring-accent-ring"
               >
-                + Add task
+                <Plus size={13} strokeWidth={1.75} />
+                Add task
               </button>
 
               <div className="grid grid-cols-2 gap-3 border-t border-ink-800 pt-3">
@@ -386,7 +388,7 @@ export default function LaunchDialog(): JSX.Element | null {
                   type="checkbox"
                   checked={background}
                   onChange={(e) => setBackground(e.target.checked)}
-                  className="h-3.5 w-3.5 accent-status-busy"
+                  className="h-3.5 w-3.5 accent-accent"
                 />
                 Run all as background agents
               </label>
@@ -397,7 +399,7 @@ export default function LaunchDialog(): JSX.Element | null {
         <footer className="flex items-center justify-end gap-2 border-t border-ink-800 px-5 py-3">
           <button
             onClick={close}
-            className="rounded-md px-3 py-1.5 text-[12.5px] text-ink-500 hover:text-ink-100/80"
+            className="cursor-pointer rounded-md px-3 py-1.5 text-[12.5px] text-ink-500 outline-none transition-colors hover:text-ink-100/80 focus-visible:ring-2 focus-visible:ring-accent-ring"
           >
             Cancel
           </button>
@@ -405,7 +407,7 @@ export default function LaunchDialog(): JSX.Element | null {
             <button
               onClick={onLaunch}
               disabled={!canLaunch}
-              className="rounded-md bg-accent px-3.5 py-1.5 text-[12.5px] font-medium text-white hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
+              className="cursor-pointer rounded-md bg-accent px-3.5 py-1.5 text-[12.5px] font-medium text-ink-50 outline-none transition-colors hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-accent-ring disabled:cursor-not-allowed disabled:opacity-40"
             >
               {busy ? 'Launching…' : 'Launch'}
             </button>
@@ -413,7 +415,7 @@ export default function LaunchDialog(): JSX.Element | null {
             <button
               onClick={onDispatch}
               disabled={!canDispatch}
-              className="rounded-md bg-accent px-3.5 py-1.5 text-[12.5px] font-medium text-white hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
+              className="cursor-pointer rounded-md bg-accent px-3.5 py-1.5 text-[12.5px] font-medium text-ink-50 outline-none transition-colors hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-accent-ring disabled:cursor-not-allowed disabled:opacity-40"
             >
               {busy ? 'Dispatching…' : `Dispatch ${rows.filter((r) => r.cwd.trim() && r.prompt.trim()).length}`}
             </button>
@@ -425,12 +427,12 @@ export default function LaunchDialog(): JSX.Element | null {
 }
 
 const inputCls =
-  'w-full rounded-md border border-ink-700 bg-ink-850 px-2.5 py-1.5 text-[12.5px] text-ink-100/90 outline-none placeholder:text-ink-600 focus:border-ink-500';
+  'w-full rounded-md border border-ink-700 bg-ink-950 px-2.5 py-1.5 text-[12.5px] text-ink-100/90 outline-none transition-colors placeholder:text-ink-500 focus:border-accent focus:ring-2 focus:ring-accent-ring';
 
 function Field({ label, children }: { label: string; children: ReactNode }): JSX.Element {
   return (
     <label className="block">
-      <span className="mb-1 block text-[11px] uppercase tracking-wide text-ink-600">{label}</span>
+      <span className="mb-1 block text-[11px] uppercase tracking-[0.08em] text-ink-500">{label}</span>
       {children}
     </label>
   );

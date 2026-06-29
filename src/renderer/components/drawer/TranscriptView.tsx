@@ -22,7 +22,7 @@ const KIND_LABEL: Record<TranscriptEvent['kind'], string> = {
 
 const KIND_ACCENT: Record<TranscriptEvent['kind'], string> = {
   user: 'text-status-busy',
-  assistant: 'text-accent-soft',
+  assistant: 'text-accent',
   system: 'text-ink-500',
   tool: 'text-status-done'
 };
@@ -66,9 +66,9 @@ function EventRow({ event }: { event: TranscriptEvent }): JSX.Element {
         {event.isSidechain && (
           <span className="rounded bg-ink-800 px-1 text-[9px] text-ink-500">subagent</span>
         )}
-        {time && <span className="text-ink-600 normal-case">{time}</span>}
+        {time && <span className="font-mono text-ink-500 normal-case">{time}</span>}
         {tokens > 0 && (
-          <span className="ml-auto font-mono text-ink-600 normal-case" title="tokens this turn">
+          <span className="ml-auto font-mono tabular-nums text-ink-500 normal-case" title="tokens this turn">
             {formatTokens(tokens)} tok
           </span>
         )}
