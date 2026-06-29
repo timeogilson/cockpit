@@ -33,6 +33,12 @@ export interface PtyCreateResult {
   id?: string;
   /** Human-readable error, present when `!ok`. */
   error?: string;
+  /**
+   * The absolute executable path main actually resolved/spawned (the `claude`
+   * binary for `shell:'claude'`, else the shell). Surfaced so the renderer can
+   * show it in a failure pane — never a silent blank terminal.
+   */
+  resolvedPath?: string;
 }
 
 /** Renderer → main: write keystrokes/data to a pty. */

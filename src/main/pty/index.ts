@@ -66,12 +66,21 @@ export class PtyManager extends EventEmitter {
     const rows = Number.isFinite(opts.rows) && opts.rows > 0 ? Math.floor(opts.rows) : 24;
     const id = `pty-${++this.seq}`;
 
-    // node-pty env wants Record<string, string | undefined>; process.env already
-    // matches, and the caller's overrides merge on top.
-    const env: Record<string, string | undefined> = { ...process.env, ...opts.env };
+    // node-pty env wants Record<string, string | undefined>. Order matters:
+    //   process.env  →  our forced color hints  →  the caller's explicit env.
+    // Forcing TERM=xterm-256color + COLORTERM=truecolor over process.env makes
+    // Claude Code render its full-color TUI (a bare/`xterm-color` TERM makes it
+    // downgrade), while still letting an explicit caller override win.
+    const env: Record<string, string | undefined> = {
+      ...process.env,
+      TERM: 'xterm-256color',
+      COLORTERM: 'truecolor',
+      ...opts.env
+    };
 
     const term = pty.spawn(shell, args, {
-      name: 'xterm-color',
+      // 256-color terminfo so the child advertises a full-color, modern xterm.
+      name: 'xterm-256color',
       cols,
       rows,
       cwd: opts.cwd,

@@ -111,7 +111,11 @@ export function registerIpc(engine: DataEngine, getWindow: () => BrowserWindow |
       if (req?.shell === 'claude') {
         const claudePath = resolveClaudePath();
         if (!claudePath) {
-          return { ok: false, error: 'claude executable not found on PATH' };
+          return {
+            ok: false,
+            error:
+              'claude executable not found on PATH. Install the Claude Code CLI, or set COCKPIT_CLAUDE_BIN to its absolute path.'
+          };
         }
         const claudeReq: PtyCreateRequest = {
           ...req,
@@ -119,10 +123,10 @@ export function registerIpc(engine: DataEngine, getWindow: () => BrowserWindow |
           args: [...buildClaudeArgs({ model: req.model, prompt: req.prompt }), ...(req.args ?? [])]
         };
         const id = ptyManager.create(claudeReq);
-        return { ok: true, id };
+        return { ok: true, id, resolvedPath: claudePath };
       }
       const id = ptyManager.create(req);
-      return { ok: true, id };
+      return { ok: true, id, resolvedPath: req?.shell };
     } catch (err) {
       const error = (err as Error).message;
       console.error('[ipc] pty:create failed (fail-soft):', error);
