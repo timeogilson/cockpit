@@ -5,32 +5,38 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Deep neutral, Claude-style dark surface ramp (high = light text, low = dark bg).
+        // Warm-dark, Claude-style surface ramp (high = light text, low = dark bg).
         ink: {
-          100: '#e9ecf1',
-          200: '#c7ccd5',
-          300: '#a4abb8',
-          400: '#828b9b',
-          500: '#5b6573',
-          600: '#3a414c',
-          700: '#2a2f37',
-          750: '#21252b',
-          800: '#1b1e23',
-          850: '#16181c',
-          900: '#101114',
-          950: '#0b0c0e'
+          50: '#f7f1e7',
+          100: '#ece4d8',
+          200: '#d9cfc1',
+          300: '#c4b8a8',
+          400: '#a99c8d',
+          500: '#8a7d70',
+          600: '#5c5046',
+          700: '#382f27',
+          750: '#312a23',
+          800: '#2a241e',
+          850: '#221d18',
+          900: '#1b1713',
+          950: '#14110d'
         },
-        // Status accents.
+        // Status accents (muted, professional). `needs` is an amber alias of `input`.
         status: {
-          busy: '#5b9dff',
-          input: '#f5b545',
-          done: '#4ec98a',
-          failed: '#f06a6a',
-          idle: '#7c8694'
+          busy: '#6a9fc4',
+          input: '#e0a23f',
+          needs: '#e0a23f',
+          idle: '#8a7d70',
+          done: '#6f9e72',
+          failed: '#d2674d'
         },
+        // Claude clay-coral — the single saturated brand accent.
         accent: {
-          DEFAULT: '#c96442',
-          soft: '#d98a6f'
+          DEFAULT: '#d97757',
+          hover: '#e08a6d',
+          press: '#c15f3c',
+          soft: 'rgba(217,119,87,0.12)',
+          ring: 'rgba(217,119,87,0.45)'
         }
       },
       fontFamily: {
@@ -44,16 +50,25 @@ module.exports = {
           'sans-serif'
         ],
         mono: [
-          'ui-monospace',
-          'SFMono-Regular',
+          'JetBrains Mono',
+          'Cascadia Mono',
           'Cascadia Code',
           'Consolas',
+          'ui-monospace',
           'monospace'
         ]
       },
+      borderRadius: {
+        sm: '6px',
+        md: '8px',
+        lg: '10px',
+        xl: '14px'
+      },
       boxShadow: {
         card: '0 1px 2px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.25)',
-        rail: 'inset 1px 0 0 rgba(255,255,255,0.04)'
+        rail: 'inset 1px 0 0 rgba(255,255,255,0.04)',
+        float: '0 8px 30px rgba(0,0,0,0.45)',
+        pop: '0 4px 16px rgba(0,0,0,0.4)'
       }
     }
   },

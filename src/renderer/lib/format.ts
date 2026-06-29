@@ -1,4 +1,6 @@
 import type { AgentStatus, TokenCounts } from '@shared/types';
+import type { LucideIcon } from 'lucide-react';
+import { Loader, CircleAlert, CircleCheck, CircleX, Circle } from 'lucide-react';
 
 export function formatCost(usd: number): string {
   if (!Number.isFinite(usd)) return '$0.00';
@@ -72,16 +74,17 @@ export function hourLabel(hour: number): string {
 
 export const STATUS_META: Record<
   AgentStatus,
-  { label: string; dot: string; text: string; ring: string }
+  { label: string; dot: string; text: string; ring: string; icon: LucideIcon }
 > = {
-  busy: { label: 'Running', dot: 'bg-status-busy', text: 'text-status-busy', ring: 'ring-status-busy/30' },
+  busy: { label: 'Running', dot: 'bg-status-busy', text: 'text-status-busy', ring: 'ring-status-busy/30', icon: Loader },
   'needs-input': {
     label: 'Needs input',
     dot: 'bg-status-input',
     text: 'text-status-input',
-    ring: 'ring-status-input/30'
+    ring: 'ring-status-input/30',
+    icon: CircleAlert
   },
-  done: { label: 'Done', dot: 'bg-status-done', text: 'text-status-done', ring: 'ring-status-done/30' },
-  failed: { label: 'Failed', dot: 'bg-status-failed', text: 'text-status-failed', ring: 'ring-status-failed/30' },
-  idle: { label: 'Idle', dot: 'bg-status-idle', text: 'text-status-idle', ring: 'ring-status-idle/30' }
+  done: { label: 'Done', dot: 'bg-status-done', text: 'text-status-done', ring: 'ring-status-done/30', icon: CircleCheck },
+  failed: { label: 'Failed', dot: 'bg-status-failed', text: 'text-status-failed', ring: 'ring-status-failed/30', icon: CircleX },
+  idle: { label: 'Idle', dot: 'bg-status-idle', text: 'text-status-idle', ring: 'ring-status-idle/30', icon: Circle }
 };
