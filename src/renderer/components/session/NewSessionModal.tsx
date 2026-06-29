@@ -74,19 +74,20 @@ export default function NewSessionModal({
     setPrompt('');
   }
 
-  async function onStart(): Promise<void> {
+  function onStart(): void {
     if (!cwd.trim() || busy) return;
     setBusy(true);
-    const ok = await useSessionStore.getState().newSession({
+    // Adds a 'starting' row + selects it; the pty is spawned by the pane once it
+    // has measured its real size. Any launch failure surfaces in the pane (with a
+    // Retry), so there's nothing to await or branch on here.
+    useSessionStore.getState().newSession({
       cwd: cwd.trim(),
       model: model || undefined,
       prompt: prompt || undefined
     });
     setBusy(false);
-    if (ok) {
-      reset();
-      onClose();
-    }
+    reset();
+    onClose();
   }
 
   const canStart = cwd.trim().length > 0 && !busy;
