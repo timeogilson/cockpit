@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { X } from 'lucide-react';
 import { MODEL_CHOICES } from '@shared/control';
 import { useStore } from '../../store/useStore';
 import { useSessionStore } from '../../store/useSessionStore';
@@ -94,20 +95,21 @@ export default function NewSessionModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/55 p-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-6 backdrop-blur-[2px]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[86vh] w-[560px] max-w-full flex-col overflow-hidden rounded-xl border border-ink-700 bg-ink-900 shadow-card">
-        <header className="flex items-center justify-between border-b border-ink-800 px-5 py-3.5">
-          <h2 className="text-[14px] font-semibold text-ink-100/95">New session</h2>
+      <div className="flex max-h-[86vh] w-[560px] max-w-full flex-col overflow-hidden rounded-lg border border-ink-700 bg-ink-900 shadow-float">
+        <header className="flex items-center justify-between border-b border-ink-700/60 px-5 py-3.5">
+          <h2 className="text-[14px] font-semibold text-ink-50">New session</h2>
           <button
             onClick={onClose}
-            className="grid h-7 w-7 place-items-center rounded-md text-ink-500 hover:bg-ink-800 hover:text-ink-100/80"
+            aria-label="Close"
             title="Close"
+            className="grid h-7 w-7 cursor-pointer place-items-center rounded-md text-ink-400 transition-colors hover:bg-ink-800 hover:text-ink-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
           >
-            ✕
+            <X size={16} strokeWidth={1.75} />
           </button>
         </header>
 
@@ -153,17 +155,17 @@ export default function NewSessionModal({
           </div>
         </div>
 
-        <footer className="flex items-center justify-end gap-2 border-t border-ink-800 px-5 py-3">
+        <footer className="flex items-center justify-end gap-2 border-t border-ink-700/60 px-5 py-3">
           <button
             onClick={onClose}
-            className="rounded-md px-3 py-1.5 text-[12.5px] text-ink-500 hover:text-ink-100/80"
+            className="cursor-pointer rounded-md border border-ink-700 bg-ink-850 px-3 py-1.5 text-[12.5px] text-ink-100 transition-colors hover:bg-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
           >
             Cancel
           </button>
           <button
             onClick={onStart}
             disabled={!canStart}
-            className="rounded-md bg-accent px-3.5 py-1.5 text-[12.5px] font-medium text-white hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
+            className="cursor-pointer rounded-md bg-accent px-3.5 py-1.5 text-[12.5px] font-medium text-ink-50 transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring disabled:cursor-not-allowed disabled:opacity-40"
           >
             {busy ? 'Starting…' : 'Start session'}
           </button>
@@ -174,12 +176,14 @@ export default function NewSessionModal({
 }
 
 const inputCls =
-  'w-full rounded-md border border-ink-700 bg-ink-850 px-2.5 py-1.5 text-[12.5px] text-ink-100/90 outline-none placeholder:text-ink-600 focus:border-ink-500';
+  'w-full rounded-md border border-ink-700 bg-ink-950 px-2.5 py-1.5 text-[12.5px] text-ink-100 outline-none transition-colors placeholder:text-ink-600 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring';
 
 function Field({ label, children }: { label: string; children: ReactNode }): JSX.Element {
   return (
     <label className="block">
-      <span className="mb-1 block text-[11px] uppercase tracking-wide text-ink-600">{label}</span>
+      <span className="mb-1 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-500">
+        {label}
+      </span>
       {children}
     </label>
   );

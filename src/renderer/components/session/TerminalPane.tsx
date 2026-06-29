@@ -3,8 +3,9 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { ChevronDown, Square, SquareTerminal } from 'lucide-react';
 import '@xterm/xterm/css/xterm.css';
-import type { PtySession } from '../../store/useSessionStore';
+import type { PtySession, PtyStatus } from '../../store/useSessionStore';
 import { subscribeToPty, useSessionStore } from '../../store/useSessionStore';
 
 /**
@@ -40,29 +41,43 @@ import { subscribeToPty, useSessionStore } from '../../store/useSessionStore';
  */
 
 const TERM_THEME = {
-  background: '#0b0c0e',
-  foreground: '#e9ecf1',
-  cursor: '#d98a6f',
-  selectionBackground: '#2a2f37',
-  black: '#0b0c0e',
-  red: '#f06a6a',
-  green: '#4ec98a',
-  yellow: '#f5b545',
-  blue: '#5b9dff',
-  magenta: '#c96442',
-  cyan: '#5bb0c9',
-  white: '#c7ccd5',
-  brightBlack: '#5b6573',
-  brightRed: '#f06a6a',
-  brightGreen: '#4ec98a',
-  brightYellow: '#f5b545',
-  brightBlue: '#5b9dff',
-  brightMagenta: '#d98a6f',
-  brightCyan: '#7fd0e6',
-  brightWhite: '#e9ecf1'
+  background: '#14110d',
+  foreground: '#ece4d8',
+  cursor: '#d97757',
+  cursorAccent: '#14110d',
+  selectionBackground: '#3a3128',
+  black: '#221d18',
+  red: '#d2674d',
+  green: '#6f9e72',
+  yellow: '#e0a23f',
+  blue: '#6a9fc4',
+  magenta: '#d97757',
+  cyan: '#7fb0b8',
+  white: '#d9cfc1',
+  brightBlack: '#8a7d70',
+  brightRed: '#e07a60',
+  brightGreen: '#7faf82',
+  brightYellow: '#ecb45a',
+  brightBlue: '#84b3d4',
+  brightMagenta: '#e08a6d',
+  brightCyan: '#9fcad2',
+  brightWhite: '#f7f1e7'
 } as const;
 
-const FONT_FAMILY = "'Cascadia Mono', 'Cascadia Code', Consolas, 'Courier New', monospace";
+const FONT_FAMILY = "'JetBrains Mono', 'Cascadia Mono', 'Cascadia Code', Consolas, monospace";
+
+/** Slim header chip (model id) — matches the sidebar chip. */
+const HEADER_CHIP =
+  'shrink-0 rounded border border-ink-700 bg-ink-850 px-1.5 font-mono text-[10px] text-ink-200';
+
+/** Live PTY status → terminal-frame header dot color + label + pulse. */
+const HEADER_STATUS: Record<PtyStatus, { label: string; dot: string; text: string; pulse: boolean }> =
+  {
+    starting: { label: 'starting', dot: 'bg-status-busy', text: 'text-status-busy', pulse: false },
+    running: { label: 'running', dot: 'bg-status-busy', text: 'text-status-busy', pulse: true },
+    exited: { label: 'exited', dot: 'bg-status-idle', text: 'text-status-idle', pulse: false },
+    failed: { label: 'failed', dot: 'bg-status-failed', text: 'text-status-failed', pulse: false }
+  };
 
 /**
  * "At bottom" tolerance, in lines. The viewport counts as pinned to the bottom
@@ -259,7 +274,13 @@ export default function TerminalPane({
         /* fail-soft — a transient zero-size layout shouldn't throw */
       }
     };
-    measureAndStart();
+    // Wait for web fonts so xterm measures glyph width with JetBrains Mono loaded
+    // (otherwise the first paint can be mis-sized against a fallback metric).
+    if (typeof document !== 'undefined' && (document as any).fonts?.ready) {
+      (document as any).fonts.ready.then(() => measureAndStart()).catch(() => measureAndStart());
+    } else {
+      measureAndStart();
+    }
 
     // Debounced resize: re-fit, and only forward when cols/rows actually change.
     let resizeTimer: ReturnType<typeof setTimeout> | undefined;
@@ -391,24 +412,56 @@ export default function TerminalPane({
     }
   }, [active, ptyId]);
 
+  const headerStatus = HEADER_STATUS[session.status];
+
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-lg border border-ink-700/70 bg-ink-950 p-3">
-      {session.status === 'exited' && (
-        <div className="mb-1.5 shrink-0 text-[11px] text-ink-500">
-          session exited (code {session.exitCode ?? '?'})
-        </div>
-      )}
-      <div className="relative h-full min-h-0 w-full">
-        <div ref={containerRef} className="h-full min-h-0 w-full" />
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-lg border border-ink-700/70 bg-ink-950">
+      {/* Slim terminal-frame header — session title + cwd + model + status. */}
+      <div className="flex shrink-0 items-center gap-2 border-b border-ink-700/60 bg-ink-900 px-3 py-2">
+        <SquareTerminal size={16} strokeWidth={1.75} className="shrink-0 text-ink-400" />
+        <span className="min-w-0 truncate text-[13px] text-ink-100">{session.title}</span>
+        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-ink-500">
+          {session.cwd}
+        </span>
+        {session.model && <span className={HEADER_CHIP}>{session.model}</span>}
+        <span className={`flex shrink-0 items-center gap-1.5 text-[11px] ${headerStatus.text}`}>
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${headerStatus.dot} ${
+              headerStatus.pulse ? 'pulse-dot' : ''
+            }`}
+          />
+          {headerStatus.label}
+        </span>
+        {session.status === 'running' && (
+          <button
+            type="button"
+            aria-label="Stop session"
+            title="Stop this session"
+            onClick={() => useSessionStore.getState().stopSession(session.id)}
+            className="grid h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-md text-ink-400 transition-colors hover:bg-ink-800 hover:text-status-failed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+          >
+            <Square size={16} strokeWidth={1.75} />
+          </button>
+        )}
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col p-3">
+        {session.status === 'exited' && (
+          <div className="mb-1.5 shrink-0 text-[11px] text-ink-500">
+            session exited (code {session.exitCode ?? '?'})
+          </div>
+        )}
+        <div className="relative h-full min-h-0 w-full">
+          <div ref={containerRef} className="h-full min-h-0 w-full" />
 
         {/* Smart auto-scroll pill — only while the user has scrolled up to read. */}
         {session.status === 'running' && pillCount !== null && (
           <button
             type="button"
             onClick={jumpToLatest}
-            className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 rounded-full border border-ink-700 bg-ink-850/95 px-3 py-1.5 text-[11.5px] font-medium text-ink-100/90 shadow-lg shadow-black/40 backdrop-blur transition-colors hover:border-accent/60 hover:bg-ink-800"
+            className="absolute bottom-3 right-3 z-10 flex cursor-pointer items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-[11.5px] font-medium text-ink-50 shadow-float transition-colors duration-150 hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
           >
-            <span aria-hidden>↓</span>
+            <ChevronDown size={14} strokeWidth={2} />
             <span>
               {pillCount > 0
                 ? `${pillCount} new line${pillCount === 1 ? '' : 's'}`
@@ -446,13 +499,14 @@ export default function TerminalPane({
               </dl>
               <button
                 onClick={() => retrySession(session.id)}
-                className="mt-4 rounded-md bg-accent px-3.5 py-1.5 text-[12.5px] font-medium text-white transition-colors hover:bg-accent-soft"
+                className="mt-4 cursor-pointer rounded-md bg-accent px-3.5 py-1.5 text-[12.5px] font-medium text-ink-50 transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
               >
                 Retry
               </button>
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

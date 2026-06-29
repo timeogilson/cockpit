@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react';
+import { Plus, Square, X } from 'lucide-react';
 import type { Agent, AgentStatus } from '@shared/types';
 import { useStore } from '../../store/useStore';
 import { useSessionStore, type PtyStatus } from '../../store/useSessionStore';
@@ -27,21 +28,21 @@ function GroupHeader({
   return (
     <p
       className={[
-        'flex items-center gap-1.5 px-2 pb-1.5 pt-3 text-[10.5px] font-semibold uppercase tracking-wide',
-        accent ? 'text-status-input' : 'text-ink-600'
+        'flex items-center gap-1.5 px-2 pb-1.5 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em]',
+        accent ? 'text-status-needs' : 'text-ink-500'
       ].join(' ')}
     >
-      {accent && <span className="h-1 w-1 rounded-full bg-status-input" />}
+      {accent && <span className="h-1 w-1 rounded-full bg-status-needs" />}
       <span>{children}</span>
       {typeof count === 'number' && count > 0 && (
-        <span className="font-normal normal-case text-ink-600">· {count}</span>
+        <span className="font-normal normal-case text-ink-500">· {count}</span>
       )}
     </p>
   );
 }
 
 const chipCls =
-  'shrink-0 rounded border border-ink-700 bg-ink-850 px-1.5 text-[10px] text-ink-100/70';
+  'shrink-0 rounded border border-ink-700 bg-ink-850 px-1.5 font-mono text-[10px] text-ink-200';
 
 /** In-app PTY status → dot color + short label. */
 const PTY_META: Record<PtyStatus, { label: string; dot: string; pulse: boolean }> = {
@@ -74,10 +75,14 @@ const RECENT_CAP = 8;
 /** Selectable left-accent classes (transparent border reserved → no shift). */
 function rowCls(active: boolean): string {
   return [
-    'group flex w-full items-center gap-2 rounded-md border-l-2 px-2 py-1.5 text-left transition-colors',
-    active ? 'border-accent bg-ink-750' : 'border-transparent hover:bg-ink-850'
+    'group flex w-full cursor-pointer items-center gap-2 rounded-md border-l-2 px-2 py-1.5 text-left transition-colors',
+    active ? 'border-accent bg-accent-soft' : 'border-transparent hover:bg-ink-850'
   ].join(' ');
 }
+
+/** Hover-revealed icon action inside a row (span: nested in the row's button). */
+const rowActionCls =
+  'grid h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-md text-ink-500 opacity-0 transition focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring group-hover:opacity-100';
 
 export default function SessionsSidebar({
   onNewSession
@@ -147,14 +152,22 @@ export default function SessionsSidebar({
   const renderObserved = (a: Agent): JSX.Element => {
     const isActive = selectedObservedId === a.sessionId;
     const meta = STATUS_META[a.status];
+    const StatusIcon = meta.icon;
     return (
       <li key={a.sessionId}>
         <button onClick={() => selectObserved(a.sessionId)} className={rowCls(isActive)}>
           <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${meta.dot}`} />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[12.5px] text-ink-100/90">{a.title}</span>
-            <span className="block truncate text-[10.5px] text-ink-600">
-              <span className={meta.text}>{OBSERVED_LABEL[a.status]}</span>
+            <span
+              className={`block truncate text-[12.5px] ${isActive ? 'text-ink-50' : 'text-ink-100'}`}
+            >
+              {a.title}
+            </span>
+            <span className="block truncate text-[10.5px] text-ink-500">
+              <span className={`inline-flex items-center gap-1 align-middle ${meta.text}`}>
+                <StatusIcon size={12} strokeWidth={1.75} />
+                {OBSERVED_LABEL[a.status]}
+              </span>
               {a.project ? <span> · {a.project}</span> : null}
               <span> · {relativeTime(a.lastActivityAt || a.startedAt, now)}</span>
             </span>
@@ -170,10 +183,11 @@ export default function SessionsSidebar({
       <div className="border-b border-ink-800 p-2.5">
         <button
           onClick={onNewSession}
-          className="w-full rounded-md bg-accent px-2.5 py-1.5 text-[12.5px] font-medium text-white transition-colors hover:bg-accent-soft"
+          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md bg-accent px-2.5 py-1.5 text-[12.5px] font-medium text-ink-50 transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
           title="Start a new claude session"
         >
-          + New session
+          <Plus size={15} strokeWidth={2} />
+          New session
         </button>
       </div>
 
@@ -196,8 +210,12 @@ export default function SessionsSidebar({
                       }`}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[12.5px] text-ink-100/90">{s.title}</span>
-                      <span className="block truncate text-[10.5px] text-ink-600">
+                      <span
+                        className={`block truncate text-[12.5px] ${active ? 'text-ink-50' : 'text-ink-100'}`}
+                      >
+                        {s.title}
+                      </span>
+                      <span className="block truncate text-[10.5px] text-ink-500">
                         <span className={s.status === 'failed' ? 'text-status-failed' : undefined}>
                           {meta.label}
                         </span>
@@ -209,27 +227,29 @@ export default function SessionsSidebar({
                       <span
                         role="button"
                         tabIndex={-1}
+                        aria-label="Stop session"
                         onClick={(e) => {
                           e.stopPropagation();
                           stopSession(s.id);
                         }}
-                        className="shrink-0 rounded px-1.5 py-0.5 text-[10.5px] text-ink-500 hover:bg-ink-800 hover:text-status-failed"
+                        className={`${rowActionCls} hover:bg-ink-800 hover:text-status-failed`}
                         title="Stop this session"
                       >
-                        Stop
+                        <Square size={16} strokeWidth={1.75} />
                       </span>
                     ) : (
                       <span
                         role="button"
                         tabIndex={-1}
+                        aria-label="Remove session"
                         onClick={(e) => {
                           e.stopPropagation();
                           removeSession(s.id);
                         }}
-                        className="shrink-0 rounded px-1.5 py-0.5 text-[10.5px] text-ink-500 hover:bg-ink-800 hover:text-ink-100/80"
+                        className={`${rowActionCls} hover:bg-ink-800 hover:text-ink-100`}
                         title="Remove this session"
                       >
-                        ✕
+                        <X size={16} strokeWidth={1.75} />
                       </span>
                     )}
                   </button>
@@ -251,7 +271,9 @@ export default function SessionsSidebar({
                 <GroupHeader accent count={needsYou.length}>
                   Needs you
                 </GroupHeader>
-                <ul className="space-y-0.5">{needsYou.map(renderObserved)}</ul>
+                <ul className="space-y-0.5 rounded-md bg-status-needs/[0.06] p-1">
+                  {needsYou.map(renderObserved)}
+                </ul>
               </>
             )}
 

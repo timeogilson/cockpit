@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SquareTerminal } from 'lucide-react';
 import type { TranscriptDetail } from '@shared/transcript';
 import { useSessionStore } from '../../store/useSessionStore';
 import TerminalPane from './TerminalPane';
@@ -35,11 +36,16 @@ export default function SessionCenter(): JSX.Element {
       {selected === null && (
         <div className="grid h-full place-items-center px-8 text-center">
           <div className="max-w-sm">
-            <p className="text-[13px] font-medium text-ink-100/80">No session selected</p>
+            <SquareTerminal
+              size={28}
+              strokeWidth={1.5}
+              className="mx-auto mb-3 text-ink-600"
+            />
+            <p className="text-[13px] font-medium text-ink-100">No session selected</p>
             <p className="mt-1.5 text-[12px] leading-relaxed text-ink-500">
-              Start a live <span className="text-accent-soft">claude</span> session with
-              <span className="mx-1 rounded border border-ink-700 bg-ink-850 px-1.5 py-0.5 text-[11px] text-ink-100/80">
-                + New session
+              Start a live <span className="text-accent">claude</span> session with
+              <span className="mx-1 rounded border border-ink-700 bg-ink-850 px-1.5 py-0.5 text-[11px] text-ink-100">
+                New session
               </span>
               , or pick an observed session from the sidebar to read its transcript.
             </p>
@@ -87,13 +93,13 @@ function ObservedTranscript({ sessionId }: { sessionId: string }): JSX.Element {
 
   return (
     <div className="flex h-full min-h-0 flex-col rounded-lg border border-ink-700/70 bg-ink-950">
-      <header className="shrink-0 border-b border-ink-800 px-4 py-2.5">
+      <header className="shrink-0 border-b border-ink-700/60 bg-ink-900 px-4 py-2.5">
         <div className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-status-idle" />
-          <span className="truncate text-[13px] font-medium text-ink-100/90">
+          <span className="truncate text-[13px] font-medium text-ink-100">
             {detail?.title ?? 'Transcript'}
           </span>
-          <span className="ml-auto text-[10.5px] uppercase tracking-wide text-ink-600">
+          <span className="ml-auto text-[10.5px] uppercase tracking-[0.08em] text-ink-500">
             read-only — started outside Cockpit
           </span>
         </div>
