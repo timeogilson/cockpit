@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
@@ -21,6 +21,19 @@ import { subscribeToPty, useSessionStore } from '../../store/useSessionStore';
  *     match node-pty's Windows backend.
  *   - LEGIBLE FAILURES. A create error or an immediate exit renders a failure
  *     pane (resolved path + exit code + Retry) instead of a silent blank screen.
+ *
+ * SMART AUTO-SCROLL. Claude Code is an Ink (React-for-terminals) app that draws
+ * INLINE — no alt-screen, no mouse tracking (verified by probe) — so xterm holds
+ * real scrollback. This pane therefore implements a "follow / break-follow"
+ * model just like a chat log:
+ *   - While pinned to the bottom (`follow`), new output keeps the view at the
+ *     bottom — you watch claude go live.
+ *   - The instant you scroll up to read, we STOP yanking you down, count the new
+ *     lines that arrive, and float a "Jump to latest" pill bottom-right.
+ *   - Clicking the pill (or scrolling back to the bottom) re-pins to the bottom.
+ * Wheel/keyboard scrollback works natively (no mouse mode steals the wheel); we
+ * only tune sensitivity + smooth-scroll for feel. Follow state is per terminal
+ * instance, so switching sessions never clobbers another pane's scroll position.
  *
  * `session.id` is the stable row id (identity/selection); `session.ptyId` is the
  * live node-pty handle, assigned after spawn. All pty IPC keys on `ptyId`.
@@ -51,6 +64,13 @@ const TERM_THEME = {
 
 const FONT_FAMILY = "'Cascadia Mono', 'Cascadia Code', Consolas, 'Courier New', monospace";
 
+/**
+ * "At bottom" tolerance, in lines. The viewport counts as pinned to the bottom
+ * when it's within this many rows of the latest line, so a 1-line jitter from a
+ * redraw doesn't spuriously break follow.
+ */
+const BOTTOM_THRESHOLD = 1;
+
 export default function TerminalPane({
   session,
   active
@@ -66,11 +86,53 @@ export default function TerminalPane({
   /** Last geometry actually forwarded to the pty (dedupe resize spam). */
   const lastSentRef = useRef<{ cols: number; rows: number } | null>(null);
 
+  // ---- smart auto-scroll state (per terminal instance) ---------------------
+  /** True while the viewport is pinned to the bottom (we keep following output). */
+  const followRef = useRef(true);
+  /** Scrollback baseY captured the moment the user broke follow (scrolled up). */
+  const baseAtLeaveRef = useRef(0);
+  /** New scrollback lines accrued since follow broke (drives the pill count). */
+  const newLinesRef = useRef(0);
+  /** rAF handle coalescing pill re-renders (output can fire many times a frame). */
+  const pillRafRef = useRef(0);
+  /** `null` = pill hidden (following); a number = lines behind (0 ⇒ "Jump to latest"). */
+  const [pillCount, setPillCount] = useState<number | null>(null);
+
   const id = session.id;
   const ptyId = session.ptyId;
   const status = session.status;
 
   const retrySession = useSessionStore((s) => s.retrySession);
+
+  /** Is the live viewport within BOTTOM_THRESHOLD of the latest line? */
+  const isAtBottom = useCallback((term: Terminal): boolean => {
+    const buf = term.buffer.active;
+    return buf.viewportY >= buf.baseY - BOTTOM_THRESHOLD;
+  }, []);
+
+  /** Push follow/new-line state into the pill, coalesced to one update per frame. */
+  const schedulePill = useCallback(() => {
+    if (pillRafRef.current) return;
+    pillRafRef.current = requestAnimationFrame(() => {
+      pillRafRef.current = 0;
+      setPillCount(followRef.current ? null : newLinesRef.current);
+    });
+  }, []);
+
+  /** Re-pin to the bottom and resume following (pill click / programmatic). */
+  const jumpToLatest = useCallback(() => {
+    const term = termRef.current;
+    if (!term) return;
+    followRef.current = true;
+    newLinesRef.current = 0;
+    try {
+      term.scrollToBottom();
+      term.focus();
+    } catch {
+      /* fail-soft */
+    }
+    setPillCount(null);
+  }, []);
 
   // ---- mount: build the terminal once, then spawn at the measured size ------
   useEffect(() => {
@@ -85,7 +147,14 @@ export default function TerminalPane({
       fontFamily: FONT_FAMILY,
       fontSize: 13,
       cursorBlink: true,
-      scrollback: 5000,
+      // Deep, cheap scrollback so a long claude run stays fully re-readable.
+      scrollback: 10000,
+      // Smooth wheel/jump scrolling + a comfortable wheel step. Claude enables no
+      // mouse tracking, so the wheel drives xterm's scrollback natively (verified
+      // by probe) — these just make it feel right.
+      smoothScrollDuration: 120,
+      scrollSensitivity: 3,
+      fastScrollSensitivity: 5,
       theme: { ...TERM_THEME }
     });
 
@@ -123,6 +192,26 @@ export default function TerminalPane({
     termRef.current = term;
     fitRef.current = fit;
 
+    // Follow tracking: ANY viewport move (wheel, keyboard PageUp, drag, or our own
+    // scrollToBottom) lands here. Scrolling up off the bottom breaks follow and
+    // arms the pill; scrolling back to the bottom re-pins and clears it. Driving
+    // this purely off the bottom check keeps it robust across input sources.
+    const onScrollDisp = term.onScroll(() => {
+      const atBottom = isAtBottom(term);
+      if (atBottom) {
+        if (!followRef.current) {
+          followRef.current = true;
+          newLinesRef.current = 0;
+          schedulePill();
+        }
+      } else if (followRef.current) {
+        followRef.current = false;
+        baseAtLeaveRef.current = term.buffer.active.baseY;
+        newLinesRef.current = 0;
+        schedulePill();
+      }
+    });
+
     // Input → pty. Resolve the live pty id at call-time (it's assigned after
     // spawn); keystrokes before the pty exists are simply dropped.
     const onDataDisp = term.onData((d: string) => {
@@ -134,6 +223,16 @@ export default function TerminalPane({
         /* fail-soft */
       }
     });
+
+    // Clicking anywhere in the terminal grabs the keyboard (you type to claude).
+    const onMouseDown = (): void => {
+      try {
+        term.focus();
+      } catch {
+        /* fail-soft */
+      }
+    };
+    container.addEventListener('mousedown', onMouseDown);
 
     // Measure → spawn at the REAL size. Retry on the next frame until the
     // container actually has layout (a hidden/0-size fit yields wrong dims).
@@ -181,6 +280,9 @@ export default function TerminalPane({
         const pid = useSessionStore.getState().runningHere.find((r) => r.id === id)?.ptyId;
         if (pid) void window.cockpit?.invoke('pty:resize', { id: pid, cols, rows });
         t.refresh(0, t.rows - 1);
+        // Resize must NOT reset follow: if we were pinned, stay pinned; if the
+        // user was reading scrollback, leave their position alone.
+        if (followRef.current) t.scrollToBottom();
       } catch {
         /* fail-soft */
       }
@@ -194,6 +296,9 @@ export default function TerminalPane({
     return () => {
       if (raf) cancelAnimationFrame(raf);
       if (resizeTimer) clearTimeout(resizeTimer);
+      if (pillRafRef.current) cancelAnimationFrame(pillRafRef.current);
+      container.removeEventListener('mousedown', onMouseDown);
+      onScrollDisp.dispose();
       onDataDisp.dispose();
       ro.disconnect();
       try {
@@ -212,9 +317,35 @@ export default function TerminalPane({
     if (!ptyId) return;
     const term = termRef.current;
     if (!term) return;
-    const unsub = subscribeToPty(ptyId, (chunk) => term.write(chunk));
+
+    // A fresh pty (initial spawn or retry) starts pinned to the bottom: the
+    // synchronous buffer replay below should land us at the latest line.
+    followRef.current = true;
+    newLinesRef.current = 0;
+    baseAtLeaveRef.current = 0;
+    setPillCount(null);
+
+    const unsub = subscribeToPty(ptyId, (chunk) => {
+      const t = termRef.current;
+      if (!t) return;
+      // Write, then settle scroll AFTER xterm has parsed the chunk (baseY is up
+      // to date in the callback): keep pinned while following, else tally how far
+      // behind we now are so the pill can show "N new lines".
+      t.write(chunk, () => {
+        if (followRef.current) {
+          try {
+            t.scrollToBottom();
+          } catch {
+            /* fail-soft */
+          }
+        } else {
+          newLinesRef.current = Math.max(0, t.buffer.active.baseY - baseAtLeaveRef.current);
+          schedulePill();
+        }
+      });
+    });
     return unsub;
-  }, [ptyId]);
+  }, [ptyId, schedulePill]);
 
   // ---- retry: a row returning to 'starting' (already measured) re-spawns -----
   useEffect(() => {
@@ -226,6 +357,10 @@ export default function TerminalPane({
     } catch {
       /* fail-soft */
     }
+    followRef.current = true;
+    newLinesRef.current = 0;
+    baseAtLeaveRef.current = 0;
+    setPillCount(null);
     lastSentRef.current = dims;
     void useSessionStore.getState().startPty(id, dims);
   }, [status, ptyId, id]);
@@ -248,6 +383,8 @@ export default function TerminalPane({
         lastSentRef.current = { cols, rows };
         if (ptyId) void window.cockpit?.invoke('pty:resize', { id: ptyId, cols, rows });
       }
+      // Re-pin on re-show only if we were following (don't disturb a reader).
+      if (followRef.current) term.scrollToBottom();
       term.focus();
     } catch {
       /* fail-soft */
@@ -263,6 +400,22 @@ export default function TerminalPane({
       )}
       <div className="relative h-full min-h-0 w-full">
         <div ref={containerRef} className="h-full min-h-0 w-full" />
+
+        {/* Smart auto-scroll pill — only while the user has scrolled up to read. */}
+        {session.status === 'running' && pillCount !== null && (
+          <button
+            type="button"
+            onClick={jumpToLatest}
+            className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 rounded-full border border-ink-700 bg-ink-850/95 px-3 py-1.5 text-[11.5px] font-medium text-ink-100/90 shadow-lg shadow-black/40 backdrop-blur transition-colors hover:border-accent/60 hover:bg-ink-800"
+          >
+            <span aria-hidden>↓</span>
+            <span>
+              {pillCount > 0
+                ? `${pillCount} new line${pillCount === 1 ? '' : 's'}`
+                : 'Jump to latest'}
+            </span>
+          </button>
+        )}
 
         {session.status === 'starting' && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
