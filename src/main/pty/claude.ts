@@ -74,12 +74,19 @@ export function resolveClaudePath(): string | null {
 function resolveViaWhich(): string | null {
   const isWin = process.platform === 'win32';
   try {
-    const res = spawnSync(isWin ? 'where' : 'which', ['claude'], { encoding: 'utf8' });
-    const stdout = typeof res.stdout === 'string' ? res.stdout : '';
-    const lines = stdout
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
+    // NOTE: capture as a Buffer (no `encoding`). `where` prints in the console
+    // OEM codepage, so an accented home path (e.g. "C:\Users\Timéo\...") gets
+    // mangled when force-decoded as utf8 — the mangled path then fails
+    // `fileExists` and resolution silently returns null. Decode as BOTH utf8 and
+    // latin1 and keep whichever lines actually point at a file on disk.
+    const res = spawnSync(isWin ? 'where' : 'which', ['claude'], {});
+    const out = res.stdout;
+    const decode = (enc: BufferEncoding): string[] =>
+      (Buffer.isBuffer(out) ? out.toString(enc) : typeof out === 'string' ? out : '')
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+    const lines = [...new Set([...decode('utf8'), ...decode('latin1')])];
     if (lines.length === 0) return null;
 
     if (isWin) {
@@ -102,10 +109,15 @@ function probeCommonLocations(): string | null {
   const candidates =
     process.platform === 'win32'
       ? [
+          // Known-good location on this machine — listed first so resolution
+          // never depends on `where`'s codepage decoding.
+          path.join(home, '.local', 'bin', 'claude.exe'),
+          path.join(home, '.local', 'bin', 'claude.cmd'),
           path.join(process.env.APPDATA ?? '', 'npm', 'claude.cmd'),
           path.join(process.env.APPDATA ?? '', 'npm', 'claude.exe'),
           path.join(home, '.claude', 'local', 'claude.exe'),
-          path.join(home, '.claude', 'local', 'claude.cmd')
+          path.join(home, '.claude', 'local', 'claude.cmd'),
+          path.join(home, 'AppData', 'Local', 'Microsoft', 'WindowsApps', 'claude.exe')
         ]
       : [
           '/usr/local/bin/claude',
